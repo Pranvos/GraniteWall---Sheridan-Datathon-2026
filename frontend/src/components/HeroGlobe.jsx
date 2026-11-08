@@ -82,6 +82,20 @@ function isVertexFarFrom(verts, index, occupied) {
   return occupied.every((j) => unitChord(v, verts[j]) >= MIN_SEAT_DIST)
 }
 
+function nearestMeshVertexIndex(verts, position) {
+  const target = new THREE.Vector3(position[0], position[1], position[2])
+  let best = 0
+  let bestDistance = Infinity
+  verts.forEach((vertex, index) => {
+    const distance = vertex.distanceToSquared(target)
+    if (distance < bestDistance) {
+      best = index
+      bestDistance = distance
+    }
+  })
+  return best
+}
+
 /** Preferred front directions, snapped to mesh intersections. */
 const SEED_DIRS = [
   new THREE.Vector3(-0.72, 0.48, 0.5).setLength(GLOBE_R),
@@ -101,20 +115,6 @@ function pickInitialVertexIndices(verts, count) {
       if (isVertexFarFrom(verts, idx, picked)) {
         chosen = idx
         break
-      }
-
-      function nearestMeshVertexIndex(verts, position) {
-        const target = new THREE.Vector3(position[0], position[1], position[2])
-        let best = 0
-        let bestDistance = Infinity
-        verts.forEach((vertex, index) => {
-          const distance = vertex.distanceToSquared(target)
-          if (distance < bestDistance) {
-            best = index
-            bestDistance = distance
-          }
-        })
-        return best
       }
     }
     picked.push(chosen)
@@ -357,6 +357,18 @@ function GlobeMesh({ reducedMotion, clusters, interactive, onSelect }) {
       ]),
     )
   })
+  const clusterKey = clusters.map((cluster) => cluster.id).join('|')
+  useEffect(() => {
+    const indices = pickInitialVertexIndices(meshVerts, clusters.length)
+    setPlacements(Object.fromEntries(
+      clusters.map((cluster, index) => [
+        cluster.id,
+        cluster.basePosition
+          ? nearestMeshVertexIndex(meshVerts, cluster.basePosition)
+          : (indices[index] ?? 0),
+      ]),
+    ))
+  }, [clusterKey, clusters, meshVerts])
   const placementsRef = useRef(placements)
   placementsRef.current = placements
 

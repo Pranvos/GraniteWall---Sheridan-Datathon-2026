@@ -7,6 +7,7 @@ import {
   Database,
   Eye,
   LayoutDashboard,
+  Lightbulb,
   RefreshCw,
   Search,
   Shield,
@@ -23,6 +24,7 @@ import MagneticCursor from './components/MagneticCursor'
 import SiteNav from './components/SiteNav'
 import { originFromElement } from './hooks/usePortalTransition'
 import EvaluationInsights from './components/EvaluationInsights'
+import EvaluationRecommendations from './components/EvaluationRecommendations'
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000'
 const severityFor = (risk) => (risk >= 0.75 ? 'Critical' : risk >= 0.5 ? 'High' : risk >= 0.25 ? 'Medium' : 'Low')
@@ -75,6 +77,7 @@ function SiemConsole({ activeLens }) {
     ['queue', AlertTriangle, 'Vulnerability queue'],
     ['signals', Signal, 'Threat signals'],
     ['rankings', BarChart3, 'Risk rankings'],
+    ['recommendations', Lightbulb, 'Recommendations'],
     ['pipeline', Database, 'Data pipeline'],
   ]
 
@@ -166,12 +169,6 @@ function SiemConsole({ activeLens }) {
             <div className="flex items-start gap-3"><button type="button" onClick={() => setSidebarOpen((open) => !open)} className="soc-button mt-0.5" aria-label={sidebarOpen ? 'Close navigation' : 'Open navigation'}><Menu size={14} /> {sidebarOpen ? 'Hide menu' : 'Menu'}</button><div><div className="font-mono text-[10px] uppercase tracking-[0.2em] text-cyan-400">SOC / vulnerability intelligence</div><h1 className="mt-1 text-xl font-semibold text-slate-100">Operations overview</h1>{activeLens ? <p className="mt-2 text-xs text-slate-400">Lens: <span className="font-semibold text-slate-200">{activeLens.name}</span> · {activeLens.viewHint}</p> : <p className="mt-2 text-xs text-slate-500">Choose a sphere node to focus the queue on a meaningful risk lens.</p>}</div></div>
             <div className="flex items-center gap-3"><span className="hidden font-mono text-[10px] text-slate-500 sm:block">{lastUpdated ? `UPDATED ${lastUpdated.toLocaleTimeString()}` : 'SYNCING...'}</span><button onClick={load} className="soc-button"><RefreshCw size={14} className={loading ? 'animate-spin' : ''} /> Refresh</button></div>
           </div>
-          <div className="mt-4 flex flex-wrap gap-2">
-            <label className="flex min-w-56 flex-1 items-center gap-2 rounded border border-slate-700 bg-slate-900/80 px-3 py-2 text-slate-500"><Search size={15} /><input value={query} onChange={(event) => { setPage(1); setQuery(event.target.value) }} placeholder="Search CVE identifier..." className="w-full bg-transparent font-mono text-xs text-slate-200 outline-none placeholder:text-slate-600" /></label>
-            <select value={severity} onChange={(event) => { setPage(1); setSeverity(event.target.value) }} className="soc-select"><option value="">All severities</option><option value="critical">Critical</option><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option></select>
-            <select value={method} onChange={(event) => { setPage(1); setMethod(event.target.value) }} className="soc-select"><option value="direct_risk">Granite direct risk</option><option value="exploit_then_epss">Public exploit + EPSS</option><option value="epss">EPSS first</option><option value="cvss3">CVSS 3 first</option></select>
-            <button onClick={() => { setPage(1); setKevOnly((value) => !value) }} className={`soc-button ${kevOnly ? 'border-red-400/60 bg-red-400/10 text-red-300' : ''}`}><SlidersHorizontal size={14} /> KEV only</button>
-          </div>
           <nav className="mt-4 flex gap-2 overflow-x-auto border-t border-slate-800 pt-3" aria-label="Operations sections">
             {tabs.map(([id, Icon, label]) => (
               <button key={id} type="button" onClick={() => setActiveTab(id)} className={`inline-flex shrink-0 items-center gap-2 rounded border px-3 py-2 font-mono text-[10px] uppercase tracking-wider transition ${activeTab === id ? 'border-cyan-300 bg-cyan-300/10 text-cyan-200' : 'border-slate-700 text-slate-500 hover:border-slate-500 hover:text-slate-300'}`}><Icon size={13} />{label}</button>
@@ -189,10 +186,19 @@ function SiemConsole({ activeLens }) {
           </section> : null}
 
           {activeTab === 'rankings' ? <EvaluationInsights summary={summary} results={results} loading={evaluation.status === 'loading'} error={evaluation.status === 'error' ? evaluation.error : ''} /> : null}
+          {activeTab === 'recommendations' ? <EvaluationRecommendations summary={summary} results={results} loading={evaluation.status === 'loading'} error={evaluation.status === 'error' ? evaluation.error : ''} /> : null}
 
           {activeTab === 'queue' ? <section className="soc-panel overflow-hidden">
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 px-5 py-4"><div><h2 className="panel-title">Top 500 vulnerability queue</h2><p className="panel-subtitle">{total.toLocaleString()} highest-ranked records · {method.replaceAll('_', ' ')}</p></div><div className="flex items-center gap-2 font-mono text-[10px] uppercase text-slate-500"><Eye size={14} /> analyst view</div></div>
-            <div className="overflow-x-auto"><table className="w-full min-w-[850px] text-left"><thead><tr className="border-b border-slate-800 bg-slate-900/40 font-mono text-[10px] uppercase tracking-wider text-slate-500"><th className="px-5 py-3">CVE</th><th className="px-3 py-3">Severity</th><th className="px-3 py-3">EPSS</th><th className="px-3 py-3">Signals</th><th className="px-3 py-3">Risk score</th><th className="px-3 py-3">KEV</th><th className="px-5 py-3 text-right">Inspect</th></tr></thead><tbody>{items.map((item) => { const level = severityFor(item.risk_score); return <tr key={item.cve_id} className="border-b border-slate-800/70 text-sm hover:bg-cyan-400/[0.03]"><td className="px-5 py-3 font-mono text-xs text-cyan-300">{item.cve_id}<div className="text-[10px] text-slate-600">{item.published || 'date unavailable'}</div></td><td className="px-3 py-3"><Badge>{level}</Badge></td><td className="px-3 py-3 font-mono text-xs">{Number(item.epss).toFixed(4)}</td><td className="px-3 py-3 font-mono text-xs">{item.exploit_signal_count}/4</td><td className="px-3 py-3 font-mono text-xs font-semibold text-slate-100">{Number(item.risk_score).toFixed(4)}</td><td className="px-3 py-3">{item.is_kev ? <Badge tone="border-red-500/30 bg-red-500/10 text-red-300">confirmed</Badge> : <span className="font-mono text-[10px] text-slate-600">—</span>}</td><td className="px-5 py-3 text-right"><button onClick={() => openDetails(item)} className="text-slate-500 hover:text-cyan-300"><Eye size={16} /></button></td></tr> })}</tbody></table>{!items.length && !loading ? <EmptyState /> : null}</div>
+            <div className="border-b border-slate-800 px-5 py-4">
+              <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="panel-title">Top 500 vulnerability queue</h2><p className="panel-subtitle">{total.toLocaleString()} highest-ranked records · {method.replaceAll('_', ' ')}</p></div><div className="flex items-center gap-2 font-mono text-[10px] uppercase text-slate-500"><Eye size={14} /> analyst view</div></div>
+              <div className="mt-4 flex flex-wrap gap-2" aria-label="Vulnerability queue filters">
+                <label className="flex min-w-56 flex-1 items-center gap-2 rounded border border-slate-700 bg-slate-900/80 px-3 py-2 text-slate-500"><Search size={15} /><input value={query} onChange={(event) => { setPage(1); setQuery(event.target.value) }} placeholder="Search CVE identifier..." className="w-full bg-transparent font-mono text-xs text-slate-200 outline-none placeholder:text-slate-600" /></label>
+                <select aria-label="Filter by severity" value={severity} onChange={(event) => { setPage(1); setSeverity(event.target.value) }} className="soc-select"><option value="">All severities</option><option value="critical">Critical</option><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option></select>
+                <select aria-label="Ranking method" value={method} onChange={(event) => { setPage(1); setMethod(event.target.value) }} className="soc-select"><option value="direct_risk">Granite direct risk</option><option value="exploit_then_epss">Public exploit + EPSS</option><option value="epss">EPSS first</option><option value="cvss3">CVSS 3 first</option></select>
+                <button type="button" onClick={() => { setPage(1); setKevOnly((value) => !value) }} className={`soc-button ${kevOnly ? 'border-red-400/60 bg-red-400/10 text-red-300' : ''}`}><SlidersHorizontal size={14} /> KEV only</button>
+              </div>
+            </div>
+            <div className="overflow-x-auto"><table className="w-full min-w-[850px] text-left"><thead><tr className="border-b border-slate-800 bg-slate-900/40 font-mono text-[10px] uppercase tracking-wider text-slate-500"><th className="px-5 py-3">CVE</th><th className="px-3 py-3">Severity</th><th className="px-3 py-3">EPSS</th><th className="px-3 py-3">Signals</th><th className="px-3 py-3">Risk score</th><th className="px-3 py-3">KEV</th><th className="px-5 py-3 text-right">Inspect</th></tr></thead><tbody>{items.map((item) => { const level = item.severity_category || severityFor(Number(item.risk_score)); return <tr key={item.cve_id} className="border-b border-slate-800/70 text-sm hover:bg-cyan-400/[0.03]"><td className="px-5 py-3 font-mono text-xs text-cyan-300">{item.cve_id}<div className="text-[10px] text-slate-600">{item.published || 'date unavailable'}</div></td><td className="px-3 py-3"><Badge>{level}</Badge></td><td className="px-3 py-3 font-mono text-xs">{Number(item.epss).toFixed(4)}</td><td className="px-3 py-3 font-mono text-xs">{item.exploit_signal_count}/4</td><td className="px-3 py-3 font-mono text-xs font-semibold text-slate-100">{Number(item.risk_score).toFixed(4)}</td><td className="px-3 py-3">{item.is_kev ? <Badge tone="border-red-500/30 bg-red-500/10 text-red-300">confirmed</Badge> : <span className="font-mono text-[10px] text-slate-600">—</span>}</td><td className="px-5 py-3 text-right"><button onClick={() => openDetails(item)} className="text-slate-500 hover:text-cyan-300"><Eye size={16} /></button></td></tr> })}</tbody></table>{!items.length && !loading ? <EmptyState /> : null}</div>
             <div className="flex items-center justify-between border-t border-slate-800 px-5 py-3 font-mono text-[10px] text-slate-500"><span>PAGE {page} / {Math.max(1, Math.ceil(total / 25))}</span><div className="flex gap-2"><button disabled={page === 1} onClick={() => setPage((value) => value - 1)} className="soc-icon-button"><ChevronLeft size={14} /></button><button disabled={page >= Math.ceil(total / 25)} onClick={() => setPage((value) => value + 1)} className="soc-icon-button"><ChevronRight size={14} /></button></div></div>
           </section> : null}
 
