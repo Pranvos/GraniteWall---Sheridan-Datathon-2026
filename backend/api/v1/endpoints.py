@@ -13,6 +13,7 @@ RESULTS_PATH = EVAL_OUTPUT_DIR / "backtest_results.csv"
 SUMMARY_PATH = EVAL_OUTPUT_DIR / "backtest_results_summary.csv"
 DATA_DIR = REPO_ROOT / "data"
 SCOREBOARD_PATH = DATA_DIR / "scoreboard_2026.csv"
+SCORED_SCOREBOARD_PATH = DATA_DIR / "scoreboard_2026_scored.csv"
 VULNERABILITIES_PATH = DATA_DIR / "vulnerabilities.csv"
 KEV_PATH = DATA_DIR / "known_exploited.csv"
 SIGNAL_COLUMNS = ["exploitdb", "metasploit", "nuclei", "poc_github"]
@@ -31,14 +32,21 @@ def _read_csv(path: Path) -> list[dict[str, Any]]:
 def _load_scoreboard() -> pd.DataFrame:
     if not SCOREBOARD_PATH.exists():
         raise HTTPException(status_code=404, detail="Scoreboard dataset not found.")
-    frame = pd.read_csv(SCOREBOARD_PATH)
+    scored_path = SCORED_SCOREBOARD_PATH if SCORED_SCOREBOARD_PATH.exists() else SCOREBOARD_PATH
+    frame = pd.read_csv(scored_path)
     for column in SIGNAL_COLUMNS:
         if column not in frame.columns:
             frame[column] = 0
     frame["epss"] = pd.to_numeric(frame.get("epss"), errors="coerce").fillna(0).clip(0, 1)
     frame["exploit_signal_count"] = (frame[SIGNAL_COLUMNS] > 0).sum(axis=1)
     frame["exploit_signal_score"] = frame["exploit_signal_count"] / len(SIGNAL_COLUMNS)
-    frame["risk_score"] = 0.6 * frame["epss"] + 0.4 * frame["exploit_signal_score"]
+    if "risk_score" not in frame.columns:
+        frame["risk_score"] = 0.6 * frame["epss"] + 0.4 * frame["exploit_signal_score"]
+    frame["risk_model"] = (
+        "granite_embedding"
+        if scored_path == SCORED_SCOREBOARD_PATH and "model_prediction_probability" in frame
+        else "direct_risk_fallback"
+    )
     if KEV_PATH.exists():
         kev = pd.read_csv(KEV_PATH, usecols=["cve_id"])
         frame["is_kev"] = frame["cve_id"].isin(set(kev["cve_id"].dropna()))
@@ -70,6 +78,17 @@ def _json_value(value: Any) -> Any:
         if hasattr(value, "item"):
             return value.item()
     return value
+
+
+def _percentile_categories(frame: pd.DataFrame, score_column: str) -> pd.Series:
+    """Assign display categories by percentile within the ranked top-k set."""
+    ranked = frame[score_column].rank(method="first", ascending=False, pct=True)
+    return pd.cut(
+        ranked,
+        bins=[0, 0.05, 0.20, 0.50, 1.0],
+        labels=["Critical", "High", "Medium", "Low"],
+        include_lowest=True,
+    ).astype(str)
 
 
 def _evaluation_payload() -> dict[str, Any]:
@@ -186,6 +205,7 @@ def get_api_health() -> dict:
     return {
         "status": "ok",
         "scoreboard_available": SCOREBOARD_PATH.exists(),
+        "granite_model_available": SCORED_SCOREBOARD_PATH.exists(),
         "evaluation_available": RESULTS_PATH.exists() and SUMMARY_PATH.exists(),
     }
 
@@ -225,10 +245,6 @@ def get_vulnerabilities(
     if kev_only:
         frame = frame[frame["is_kev"]]
     frame = frame[frame["risk_score"] >= min_risk]
-    if severity:
-        thresholds = {"critical": (0.75, 1.01), "high": (0.5, 0.75), "medium": (0.25, 0.5), "low": (0, 0.25)}
-        lower, upper = thresholds[severity]
-        frame = frame[(frame["risk_score"] >= lower) & (frame["risk_score"] < upper)]
     if method == "epss":
         frame["ranking_score"] = frame["epss"]
     elif method == "exploit_then_epss":
@@ -247,6 +263,9 @@ def get_vulnerabilities(
     frame = frame.sort_values(sort_column, ascending=order == "asc")
     if top_k is not None:
         frame = frame.head(top_k)
+    frame["severity_category"] = _percentile_categories(frame, "ranking_score")
+    if severity:
+        frame = frame[frame["severity_category"].str.lower() == severity]
     total = len(frame)
     start = (page - 1) * page_size
     rows = frame.iloc[start : start + page_size].copy()
@@ -257,8 +276,10 @@ def get_vulnerabilities(
         "exploit_signal_count",
         "exploit_signal_score",
         "risk_score",
+        "severity_category",
         "ranking_score",
         "is_kev",
+        "risk_model",
         *SIGNAL_COLUMNS,
     ]
     if "cvss3_score" in rows:
@@ -271,6 +292,9 @@ def get_vulnerabilities(
         "pages": (total + page_size - 1) // page_size,
         "ranking_method": method,
         "top_k": top_k,
+        "risk_model": str(rows["risk_model"].iloc[0]) if not rows.empty else (
+            "granite_embedding" if SCORED_SCOREBOARD_PATH.exists() else "direct_risk_fallback"
+        ),
     }
 
 

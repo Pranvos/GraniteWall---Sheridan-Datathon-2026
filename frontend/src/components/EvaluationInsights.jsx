@@ -27,7 +27,7 @@ function ChartPanel({ title, subtitle, children }) {
   )
 }
 
-export default function EvaluationInsights({ summary, results, loading }) {
+export default function EvaluationInsights({ summary, results, loading, error }) {
   const methods = summary.map((row) => row.method)
   const monthly = [...results].sort((a, b) => a.month.localeCompare(b.month))
   const trend = monthly.reduce((months, row) => {
@@ -48,7 +48,13 @@ export default function EvaluationInsights({ summary, results, loading }) {
     positives: acc.positives + row.positives,
   }), { hits: 0, candidates: 0, positives: 0 })
 
-  if (!summary.length && !results.length) return <div className="soc-panel p-5 text-sm text-slate-500">{loading ? 'Loading evaluation feed…' : 'No evaluation data available.'}</div>
+  if (!summary.length && !results.length) {
+    return (
+      <div className="soc-panel p-5 text-sm text-slate-500">
+        {loading ? 'Loading evaluation feed…' : error ? `Evaluation unavailable: ${error}` : 'No evaluation data available.'}
+      </div>
+    )
+  }
 
   return (
     <section className="space-y-5">

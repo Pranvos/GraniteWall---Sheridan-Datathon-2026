@@ -20,6 +20,7 @@ ENV/
 
 # Local-only dataset + brief (do not push)
 IBM/
+backend/artifacts/
 Project Brief*.pdf
 *.pdf
 
