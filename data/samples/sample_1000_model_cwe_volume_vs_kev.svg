@@ -1,0 +1,198 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="700" viewBox="0 0 1100 700">
+<rect width="100%" height="100%" fill="#f5f7f6"/>
+<style>text{font-family:Segoe UI,Arial,sans-serif;fill:#223238}.muted{fill:#66777b}.grid{stroke:#dbe3e1;stroke-width:1}</style>
+<text x="55" y="42" font-size="25" font-weight="700">CWE volume vs. known-exploited overlap</text>
+<text x="55" y="70" class="muted" font-size="14">1000 randomly sampled CVEs (seed 42); x = CVEs per CWE on log scale; y = KEV share</text>
+<line class="grid" x1="105" y1="600.0" x2="1050" y2="600.0"/>
+<text x="91" y="605.0" text-anchor="end" font-size="12" class="muted">0%</text>
+<line class="grid" x1="105" y1="501.0" x2="1050" y2="501.0"/>
+<text x="91" y="506.0" text-anchor="end" font-size="12" class="muted">20%</text>
+<line class="grid" x1="105" y1="402.0" x2="1050" y2="402.0"/>
+<text x="91" y="407.0" text-anchor="end" font-size="12" class="muted">40%</text>
+<line class="grid" x1="105" y1="303.0" x2="1050" y2="303.0"/>
+<text x="91" y="308.0" text-anchor="end" font-size="12" class="muted">60%</text>
+<line class="grid" x1="105" y1="204.0" x2="1050" y2="204.0"/>
+<text x="91" y="209.0" text-anchor="end" font-size="12" class="muted">80%</text>
+<line class="grid" x1="105" y1="105.0" x2="1050" y2="105.0"/>
+<text x="91" y="110.0" text-anchor="end" font-size="12" class="muted">100%</text>
+<line class="grid" x1="105.0" y1="105" x2="105.0" y2="600"/>
+<text x="105.0" y="624" text-anchor="middle" font-size="12" class="muted">1</text>
+<line class="grid" x1="239.4" y1="105" x2="239.4" y2="600"/>
+<text x="239.4" y="624" text-anchor="middle" font-size="12" class="muted">2</text>
+<line class="grid" x1="417.0" y1="105" x2="417.0" y2="600"/>
+<text x="417.0" y="624" text-anchor="middle" font-size="12" class="muted">5</text>
+<line class="grid" x1="551.3" y1="105" x2="551.3" y2="600"/>
+<text x="551.3" y="624" text-anchor="middle" font-size="12" class="muted">10</text>
+<line class="grid" x1="685.7" y1="105" x2="685.7" y2="600"/>
+<text x="685.7" y="624" text-anchor="middle" font-size="12" class="muted">20</text>
+<line class="grid" x1="863.3" y1="105" x2="863.3" y2="600"/>
+<text x="863.3" y="624" text-anchor="middle" font-size="12" class="muted">50</text>
+<line class="grid" x1="997.7" y1="105" x2="997.7" y2="600"/>
+<text x="997.7" y="624" text-anchor="middle" font-size="12" class="muted">100</text>
+<line class="grid" x1="1050.0" y1="105" x2="1050.0" y2="600"/>
+<text x="1050.0" y="624" text-anchor="middle" font-size="12" class="muted">131</text>
+<line x1="105" y1="105" x2="105" y2="600" stroke="#627477"/>
+<line x1="105" y1="600" x2="1050" y2="600" stroke="#627477"/>
+<text x="577.5" y="672" text-anchor="middle" font-size="14">CVE count per CWE (log scale)</text>
+<text x="24" y="352.5" text-anchor="middle" font-size="14" transform="rotate(-90 24 352.5)">Sample KEV rate</text>
+<circle cx="1050.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-79: Improper Neutralization of Input During Web Page Generation (&#x27;Cross-site Scripting&#x27;); CVEs: 131; KEV: 0 (0.0%)</title></circle>
+<circle cx="870.9" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-89: Improper Neutralization of Special Elements used in an SQL Command (&#x27;SQL Injection&#x27;); CVEs: 52; KEV: 0 (0.0%)</title></circle>
+<circle cx="847.1" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-119: Improper Restriction of Operations within the Bounds of a Memory Buffer; CVEs: 46; KEV: 0 (0.0%)</title></circle>
+<circle cx="824.8" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-20: Improper Input Validation; CVEs: 41; KEV: 0 (0.0%)</title></circle>
+<circle cx="810.1" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-862: Missing Authorization; CVEs: 38; KEV: 0 (0.0%)</title></circle>
+<circle cx="788.5" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-787: Out-of-bounds Write; CVEs: 34; KEV: 0 (0.0%)</title></circle>
+<circle cx="770.6" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-125: Out-of-bounds Read; CVEs: 31; KEV: 0 (0.0%)</title></circle>
+<circle cx="757.7" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-200: Exposure of Sensitive Information to an Unauthorized Actor; CVEs: 29; KEV: 0 (0.0%)</title></circle>
+<circle cx="721.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-22: Improper Limitation of a Pathname to a Restricted Directory (&#x27;Path Traversal&#x27;); CVEs: 24; KEV: 0 (0.0%)</title></circle>
+<circle cx="695.1" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-284: Improper Access Control; CVEs: 21; KEV: 0 (0.0%)</title></circle>
+<circle cx="695.1" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-352: Cross-Site Request Forgery (CSRF); CVEs: 21; KEV: 0 (0.0%)</title></circle>
+<circle cx="675.7" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-77: Improper Neutralization of Special Elements used in a Command (&#x27;Command Injection&#x27;); CVEs: 19; KEV: 0 (0.0%)</title></circle>
+<circle cx="665.3" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-416: Use After Free; CVEs: 18; KEV: 0 (0.0%)</title></circle>
+<circle cx="665.3" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-74: Improper Neutralization of Special Elements in Output Used by a Downstream Component (&#x27;Injection&#x27;); CVEs: 18; KEV: 0 (0.0%)</title></circle>
+<circle cx="654.2" cy="570.9" r="7.0" fill="#318a87" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-78: Improper Neutralization of Special Elements used in an OS Command (&#x27;OS Command Injection&#x27;); CVEs: 17; KEV: 1 (5.9%)</title></circle>
+<circle cx="642.4" cy="538.1" r="7.8" fill="#3c8582" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-269: Improper Privilege Management; CVEs: 16; KEV: 2 (12.5%)</title></circle>
+<circle cx="642.4" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-863: Incorrect Authorization; CVEs: 16; KEV: 0 (0.0%)</title></circle>
+<circle cx="629.9" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-287: Improper Authentication; CVEs: 15; KEV: 0 (0.0%)</title></circle>
+<circle cx="629.9" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-306: Missing Authentication for Critical Function; CVEs: 15; KEV: 0 (0.0%)</title></circle>
+<circle cx="616.6" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-122: Heap-based Buffer Overflow; CVEs: 14; KEV: 0 (0.0%)</title></circle>
+<circle cx="616.6" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-190: Integer Overflow or Wraparound; CVEs: 14; KEV: 0 (0.0%)</title></circle>
+<circle cx="616.6" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-476: NULL Pointer Dereference; CVEs: 14; KEV: 0 (0.0%)</title></circle>
+<circle cx="616.6" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-94: Improper Control of Generation of Code (&#x27;Code Injection&#x27;); CVEs: 14; KEV: 0 (0.0%)</title></circle>
+<circle cx="602.2" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-264: Permissions, Privileges, and Access Controls; CVEs: 13; KEV: 0 (0.0%)</title></circle>
+<circle cx="569.8" cy="555.0" r="7.0" fill="#368885" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-121: Stack-based Buffer Overflow; CVEs: 11; KEV: 1 (9.1%)</title></circle>
+<circle cx="569.8" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-120: Buffer Copy without Checking Size of Input (&#x27;Classic Buffer Overflow&#x27;); CVEs: 11; KEV: 0 (0.0%)</title></circle>
+<circle cx="551.3" cy="550.5" r="7.0" fill="#388784" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-918: Server-Side Request Forgery (SSRF); CVEs: 10; KEV: 1 (10.0%)</title></circle>
+<circle cx="551.3" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-434: Unrestricted Upload of File with Dangerous Type; CVEs: 10; KEV: 0 (0.0%)</title></circle>
+<circle cx="551.3" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-502: Deserialization of Untrusted Data; CVEs: 10; KEV: 0 (0.0%)</title></circle>
+<circle cx="482.2" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-639: Authorization Bypass Through User-Controlled Key; CVEs: 7; KEV: 0 (0.0%)</title></circle>
+<circle cx="452.3" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-310: Cryptographic Issues; CVEs: 6; KEV: 0 (0.0%)</title></circle>
+<circle cx="452.3" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-798: Use of Hard-coded Credentials; CVEs: 6; KEV: 0 (0.0%)</title></circle>
+<circle cx="417.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-399: Resource Management Errors; CVEs: 5; KEV: 0 (0.0%)</title></circle>
+<circle cx="417.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-59: Improper Link Resolution Before File Access (&#x27;Link Following&#x27;); CVEs: 5; KEV: 0 (0.0%)</title></circle>
+<circle cx="417.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-601: URL Redirection to Untrusted Site (&#x27;Open Redirect&#x27;); CVEs: 5; KEV: 0 (0.0%)</title></circle>
+<circle cx="417.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-73: External Control of File Name or Path; CVEs: 5; KEV: 0 (0.0%)</title></circle>
+<circle cx="417.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-835: Loop with Unreachable Exit Condition (&#x27;Infinite Loop&#x27;); CVEs: 5; KEV: 0 (0.0%)</title></circle>
+<circle cx="373.7" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-191: Integer Underflow (Wrap or Wraparound); CVEs: 4; KEV: 0 (0.0%)</title></circle>
+<circle cx="373.7" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-362: Concurrent Execution using Shared Resource with Improper Synchronization (&#x27;Race Condition&#x27;); CVEs: 4; KEV: 0 (0.0%)</title></circle>
+<circle cx="373.7" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-400: Uncontrolled Resource Consumption; CVEs: 4; KEV: 0 (0.0%)</title></circle>
+<circle cx="373.7" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-843: Access of Resource Using Incompatible Type (&#x27;Type Confusion&#x27;); CVEs: 4; KEV: 0 (0.0%)</title></circle>
+<circle cx="373.7" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-915: Improperly Controlled Modification of Dynamically-Determined Object Attributes; CVEs: 4; KEV: 0 (0.0%)</title></circle>
+<circle cx="318.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-250: Execution with Unnecessary Privileges; CVEs: 3; KEV: 0 (0.0%)</title></circle>
+<circle cx="318.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-266: Incorrect Privilege Assignment; CVEs: 3; KEV: 0 (0.0%)</title></circle>
+<circle cx="318.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-295: Improper Certificate Validation; CVEs: 3; KEV: 0 (0.0%)</title></circle>
+<circle cx="318.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-319: Cleartext Transmission of Sensitive Information; CVEs: 3; KEV: 0 (0.0%)</title></circle>
+<circle cx="318.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-415: Double Free; CVEs: 3; KEV: 0 (0.0%)</title></circle>
+<circle cx="318.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-426: Untrusted Search Path; CVEs: 3; KEV: 0 (0.0%)</title></circle>
+<circle cx="318.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-552: Files or Directories Accessible to External Parties; CVEs: 3; KEV: 0 (0.0%)</title></circle>
+<circle cx="318.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-611: Improper Restriction of XML External Entity Reference; CVEs: 3; KEV: 0 (0.0%)</title></circle>
+<circle cx="318.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-674: Uncontrolled Recursion; CVEs: 3; KEV: 0 (0.0%)</title></circle>
+<circle cx="318.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-772: Missing Release of Resource after Effective Lifetime; CVEs: 3; KEV: 0 (0.0%)</title></circle>
+<circle cx="318.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-908: Use of Uninitialized Resource; CVEs: 3; KEV: 0 (0.0%)</title></circle>
+<circle cx="239.4" cy="352.5" r="7.0" fill="#806864" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-754: Improper Check for Unusual or Exceptional Conditions; CVEs: 2; KEV: 1 (50.0%)</title></circle>
+<circle cx="239.4" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-116: Improper Encoding or Escaping of Output; CVEs: 2; KEV: 0 (0.0%)</title></circle>
+<circle cx="239.4" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-1284: Improper Validation of Specified Quantity in Input; CVEs: 2; KEV: 0 (0.0%)</title></circle>
+<circle cx="239.4" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-129: Improper Validation of Array Index; CVEs: 2; KEV: 0 (0.0%)</title></circle>
+<circle cx="239.4" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-1321: Improperly Controlled Modification of Object Prototype Attributes (&#x27;Prototype Pollution&#x27;); CVEs: 2; KEV: 0 (0.0%)</title></circle>
+<circle cx="239.4" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-1333: Inefficient Regular Expression Complexity; CVEs: 2; KEV: 0 (0.0%)</title></circle>
+<circle cx="239.4" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-203: Observable Discrepancy; CVEs: 2; KEV: 0 (0.0%)</title></circle>
+<circle cx="239.4" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-248: Uncaught Exception; CVEs: 2; KEV: 0 (0.0%)</title></circle>
+<circle cx="239.4" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-285: Improper Authorization; CVEs: 2; KEV: 0 (0.0%)</title></circle>
+<circle cx="239.4" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-288: Authentication Bypass Using an Alternate Path or Channel; CVEs: 2; KEV: 0 (0.0%)</title></circle>
+<circle cx="239.4" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-294: Authentication Bypass by Capture-replay; CVEs: 2; KEV: 0 (0.0%)</title></circle>
+<circle cx="239.4" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-297: Improper Validation of Certificate with Host Mismatch; CVEs: 2; KEV: 0 (0.0%)</title></circle>
+<circle cx="239.4" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-305: Authentication Bypass by Primary Weakness; CVEs: 2; KEV: 0 (0.0%)</title></circle>
+<circle cx="239.4" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-307: Improper Restriction of Excessive Authentication Attempts; CVEs: 2; KEV: 0 (0.0%)</title></circle>
+<circle cx="239.4" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-311: Missing Encryption of Sensitive Data; CVEs: 2; KEV: 0 (0.0%)</title></circle>
+<circle cx="239.4" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-346: Origin Validation Error; CVEs: 2; KEV: 0 (0.0%)</title></circle>
+<circle cx="239.4" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-36: Absolute Path Traversal; CVEs: 2; KEV: 0 (0.0%)</title></circle>
+<circle cx="239.4" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-401: Missing Release of Memory after Effective Lifetime; CVEs: 2; KEV: 0 (0.0%)</title></circle>
+<circle cx="239.4" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-427: Uncontrolled Search Path Element; CVEs: 2; KEV: 0 (0.0%)</title></circle>
+<circle cx="239.4" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-457: Use of Uninitialized Variable; CVEs: 2; KEV: 0 (0.0%)</title></circle>
+<circle cx="239.4" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-497: Exposure of Sensitive System Information to an Unauthorized Control Sphere; CVEs: 2; KEV: 0 (0.0%)</title></circle>
+<circle cx="239.4" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-522: Insufficiently Protected Credentials; CVEs: 2; KEV: 0 (0.0%)</title></circle>
+<circle cx="239.4" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-532: Insertion of Sensitive Information into Log File; CVEs: 2; KEV: 0 (0.0%)</title></circle>
+<circle cx="239.4" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-602: Client-Side Enforcement of Server-Side Security; CVEs: 2; KEV: 0 (0.0%)</title></circle>
+<circle cx="239.4" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-613: Insufficient Session Expiration; CVEs: 2; KEV: 0 (0.0%)</title></circle>
+<circle cx="239.4" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-667: Improper Locking; CVEs: 2; KEV: 0 (0.0%)</title></circle>
+<circle cx="239.4" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-680: Integer Overflow to Buffer Overflow; CVEs: 2; KEV: 0 (0.0%)</title></circle>
+<circle cx="239.4" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-693: Protection Mechanism Failure; CVEs: 2; KEV: 0 (0.0%)</title></circle>
+<circle cx="239.4" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-732: Incorrect Permission Assignment for Critical Resource; CVEs: 2; KEV: 0 (0.0%)</title></circle>
+<circle cx="239.4" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-755: Improper Handling of Exceptional Conditions; CVEs: 2; KEV: 0 (0.0%)</title></circle>
+<circle cx="239.4" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-770: Allocation of Resources Without Limits or Throttling; CVEs: 2; KEV: 0 (0.0%)</title></circle>
+<circle cx="239.4" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-80: Improper Neutralization of Script-Related HTML Tags in a Web Page (Basic XSS); CVEs: 2; KEV: 0 (0.0%)</title></circle>
+<circle cx="239.4" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-824: Access of Uninitialized Pointer; CVEs: 2; KEV: 0 (0.0%)</title></circle>
+<circle cx="239.4" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-913: Improper Control of Dynamically-Managed Code Resources; CVEs: 2; KEV: 0 (0.0%)</title></circle>
+<circle cx="105.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-1021: Improper Restriction of Rendered UI Layers or Frames; CVEs: 1; KEV: 0 (0.0%)</title></circle>
+<circle cx="105.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-1188: Initialization of a Resource with an Insecure Default; CVEs: 1; KEV: 0 (0.0%)</title></circle>
+<circle cx="105.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-1191: On-Chip Debug and Test Interface With Improper Access Control; CVEs: 1; KEV: 0 (0.0%)</title></circle>
+<circle cx="105.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-1220: Insufficient Granularity of Access Control; CVEs: 1; KEV: 0 (0.0%)</title></circle>
+<circle cx="105.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-1236: Improper Neutralization of Formula Elements in a CSV File; CVEs: 1; KEV: 0 (0.0%)</title></circle>
+<circle cx="105.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-126: Buffer Over-read; CVEs: 1; KEV: 0 (0.0%)</title></circle>
+<circle cx="105.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-131: Incorrect Calculation of Buffer Size; CVEs: 1; KEV: 0 (0.0%)</title></circle>
+<circle cx="105.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-158: Improper Neutralization of Null Byte or NUL Character; CVEs: 1; KEV: 0 (0.0%)</title></circle>
+<circle cx="105.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-16: Configuration; CVEs: 1; KEV: 0 (0.0%)</title></circle>
+<circle cx="105.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-170: Improper Null Termination; CVEs: 1; KEV: 0 (0.0%)</title></circle>
+<circle cx="105.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-180: Incorrect Behavior Order: Validate Before Canonicalize; CVEs: 1; KEV: 0 (0.0%)</title></circle>
+<circle cx="105.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-184: Incomplete List of Disallowed Inputs; CVEs: 1; KEV: 0 (0.0%)</title></circle>
+<circle cx="105.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-186: Overly Restrictive Regular Expression; CVEs: 1; KEV: 0 (0.0%)</title></circle>
+<circle cx="105.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-189: Numeric Errors; CVEs: 1; KEV: 0 (0.0%)</title></circle>
+<circle cx="105.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-19: Data Processing Errors; CVEs: 1; KEV: 0 (0.0%)</title></circle>
+<circle cx="105.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-201: Insertion of Sensitive Information Into Sent Data; CVEs: 1; KEV: 0 (0.0%)</title></circle>
+<circle cx="105.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-209: Generation of Error Message Containing Sensitive Information; CVEs: 1; KEV: 0 (0.0%)</title></circle>
+<circle cx="105.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-226: Sensitive Information in Resource Not Removed Before Reuse; CVEs: 1; KEV: 0 (0.0%)</title></circle>
+<circle cx="105.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-23: Relative Path Traversal; CVEs: 1; KEV: 0 (0.0%)</title></circle>
+<circle cx="105.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-252: Unchecked Return Value; CVEs: 1; KEV: 0 (0.0%)</title></circle>
+<circle cx="105.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-254: 7PK - Security Features; CVEs: 1; KEV: 0 (0.0%)</title></circle>
+<circle cx="105.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-256: Plaintext Storage of a Password; CVEs: 1; KEV: 0 (0.0%)</title></circle>
+<circle cx="105.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-276: Incorrect Default Permissions; CVEs: 1; KEV: 0 (0.0%)</title></circle>
+<circle cx="105.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-280: Improper Handling of Insufficient Permissions or Privileges; CVEs: 1; KEV: 0 (0.0%)</title></circle>
+<circle cx="105.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-281: Improper Preservation of Permissions; CVEs: 1; KEV: 0 (0.0%)</title></circle>
+<circle cx="105.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-290: Authentication Bypass by Spoofing; CVEs: 1; KEV: 0 (0.0%)</title></circle>
+<circle cx="105.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-303: Incorrect Implementation of Authentication Algorithm; CVEs: 1; KEV: 0 (0.0%)</title></circle>
+<circle cx="105.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-312: Cleartext Storage of Sensitive Information; CVEs: 1; KEV: 0 (0.0%)</title></circle>
+<circle cx="105.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-321: Use of Hard-coded Cryptographic Key; CVEs: 1; KEV: 0 (0.0%)</title></circle>
+<circle cx="105.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-326: Inadequate Encryption Strength; CVEs: 1; KEV: 0 (0.0%)</title></circle>
+<circle cx="105.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-345: Insufficient Verification of Data Authenticity; CVEs: 1; KEV: 0 (0.0%)</title></circle>
+<circle cx="105.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-347: Improper Verification of Cryptographic Signature; CVEs: 1; KEV: 0 (0.0%)</title></circle>
+<circle cx="105.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-348: Use of Less Trusted Source; CVEs: 1; KEV: 0 (0.0%)</title></circle>
+<circle cx="105.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-35: Path Traversal: &#x27;.../...//&#x27;; CVEs: 1; KEV: 0 (0.0%)</title></circle>
+<circle cx="105.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-351: Insufficient Type Distinction; CVEs: 1; KEV: 0 (0.0%)</title></circle>
+<circle cx="105.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-356: Product UI does not Warn User of Unsafe Actions; CVEs: 1; KEV: 0 (0.0%)</title></circle>
+<circle cx="105.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-367: Time-of-check Time-of-use (TOCTOU) Race Condition; CVEs: 1; KEV: 0 (0.0%)</title></circle>
+<circle cx="105.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-394: Unexpected Status Code or Return Value; CVEs: 1; KEV: 0 (0.0%)</title></circle>
+<circle cx="105.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-404: Improper Resource Shutdown or Release; CVEs: 1; KEV: 0 (0.0%)</title></circle>
+<circle cx="105.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-417: Communication Channel Errors; CVEs: 1; KEV: 0 (0.0%)</title></circle>
+<circle cx="105.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-428: Unquoted Search Path or Element; CVEs: 1; KEV: 0 (0.0%)</title></circle>
+<circle cx="105.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-444: Inconsistent Interpretation of HTTP Requests (&#x27;HTTP Request/Response Smuggling&#x27;); CVEs: 1; KEV: 0 (0.0%)</title></circle>
+<circle cx="105.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-451: User Interface (UI) Misrepresentation of Critical Information; CVEs: 1; KEV: 0 (0.0%)</title></circle>
+<circle cx="105.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-548: Exposure of Information Through Directory Listing; CVEs: 1; KEV: 0 (0.0%)</title></circle>
+<circle cx="105.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-590: Free of Memory not on the Heap; CVEs: 1; KEV: 0 (0.0%)</title></circle>
+<circle cx="105.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-598: Use of GET Request Method With Sensitive Query Strings; CVEs: 1; KEV: 0 (0.0%)</title></circle>
+<circle cx="105.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-643: Improper Neutralization of Data within XPath Expressions (&#x27;XPath Injection&#x27;); CVEs: 1; KEV: 0 (0.0%)</title></circle>
+<circle cx="105.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-653: Improper Isolation or Compartmentalization; CVEs: 1; KEV: 0 (0.0%)</title></circle>
+<circle cx="105.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-665: Improper Initialization; CVEs: 1; KEV: 0 (0.0%)</title></circle>
+<circle cx="105.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-670: Always-Incorrect Control Flow Implementation; CVEs: 1; KEV: 0 (0.0%)</title></circle>
+<circle cx="105.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-672: Operation on a Resource after Expiration or Release; CVEs: 1; KEV: 0 (0.0%)</title></circle>
+<circle cx="105.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-682: Incorrect Calculation; CVEs: 1; KEV: 0 (0.0%)</title></circle>
+<circle cx="105.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-690: Unchecked Return Value to NULL Pointer Dereference; CVEs: 1; KEV: 0 (0.0%)</title></circle>
+<circle cx="105.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-703: Improper Check or Handling of Exceptional Conditions; CVEs: 1; KEV: 0 (0.0%)</title></circle>
+<circle cx="105.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-706: Use of Incorrectly-Resolved Name or Reference; CVEs: 1; KEV: 0 (0.0%)</title></circle>
+<circle cx="105.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-776: Improper Restriction of Recursive Entity References in DTDs (&#x27;XML Entity Expansion&#x27;); CVEs: 1; KEV: 0 (0.0%)</title></circle>
+<circle cx="105.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-822: Untrusted Pointer Dereference; CVEs: 1; KEV: 0 (0.0%)</title></circle>
+<circle cx="105.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-834: Excessive Iteration; CVEs: 1; KEV: 0 (0.0%)</title></circle>
+<circle cx="105.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-88: Improper Neutralization of Argument Delimiters in a Command (&#x27;Argument Injection&#x27;); CVEs: 1; KEV: 0 (0.0%)</title></circle>
+<circle cx="105.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-916: Use of Password Hash With Insufficient Computational Effort; CVEs: 1; KEV: 0 (0.0%)</title></circle>
+<circle cx="105.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-923: Improper Restriction of Communication Channel to Intended Endpoints; CVEs: 1; KEV: 0 (0.0%)</title></circle>
+<circle cx="105.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-95: Improper Neutralization of Directives in Dynamically Evaluated Code (&#x27;Eval Injection&#x27;); CVEs: 1; KEV: 0 (0.0%)</title></circle>
+<circle cx="105.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-98: Improper Control of Filename for Include/Require Statement in PHP Program (&#x27;PHP Remote File Inclusion&#x27;); CVEs: 1; KEV: 0 (0.0%)</title></circle>
+<circle cx="105.0" cy="600.0" r="5.0" fill="#268f8c" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.5"><title>CWE-99: Improper Control of Resource Identifiers (&#x27;Resource Injection&#x27;); CVEs: 1; KEV: 0 (0.0%)</title></circle>
+<text x="1058.0" y="590.0" font-size="11" font-weight="600">CWE-79</text>
+<text x="878.9" y="577.0" font-size="11" font-weight="600">CWE-89</text>
+<text x="855.1" y="590.0" font-size="11" font-weight="600">CWE-119</text>
+<text x="832.8" y="577.0" font-size="11" font-weight="600">CWE-20</text>
+<text x="818.1" y="590.0" font-size="11" font-weight="600">CWE-862</text>
+<text x="796.5" y="577.0" font-size="11" font-weight="600">CWE-787</text>
+<text x="778.6" y="590.0" font-size="11" font-weight="600">CWE-125</text>
+<text x="765.7" y="577.0" font-size="11" font-weight="600">CWE-200</text>
+<text x="105" y="692" class="muted" font-size="11">Color encodes KEV rate; bubble size increases with KEV count. CVEs may appear in multiple CWE categories.</text>
+</svg>
