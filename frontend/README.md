@@ -1,6 +1,7 @@
 # GraniteWall frontend
 
-React + Vite + Tailwind + Three.js (R3F) UI for the vulnerability factor globe and cluster dashboards.
+React + Vite + Tailwind + Three.js (R3F) UI for the vulnerability-factor
+globe and SIEM dashboard.
 
 ## Run
 
@@ -10,123 +11,68 @@ npm install
 npm run dev
 ```
 
-App: [http://localhost:5173](http://localhost:5173)
+The app is available at <http://localhost:5173>. It expects the FastAPI
+backend at `http://127.0.0.1:8000` by default. To use another backend, create
+`frontend/.env`:
 
-## How the backend links in
+```env
+VITE_API_URL=http://127.0.0.1:8000
+```
 
-### Current state
+## Current API integration
 
-The UI does **not** call the FastAPI backend yet. Globe clusters and dashboard payloads come from local mock builders in `src/data/clusters.js` (`buildClusters`).
+The frontend loads live data from the FastAPI API; globe points are not mock
+clusters. On load and when filters change, it requests:
 
-The backend (`../backend`) currently exposes only:
-
-- `GET http://127.0.0.1:8000/` → `{ "status": "GraniteWall backend is running" }`
-
-So you can run frontend alone for demos. Wire the API when cluster/model endpoints exist.
-
-### Intended connection
-
-| Piece | Role |
+| Endpoint | Use |
 | --- | --- |
-| Frontend | Globe, factor nodes (X / Y / Z), portal into dashboard charts |
-| Backend | Serve real cluster summaries + per-cluster analytics from IBM Granite / IBM CVE data |
+| `GET /api/v1/health` | Backend, dataset, Granite-artifact, and evaluation status |
+| `GET /api/v1/risk/summary` | Risk totals and exploit-signal counts |
+| `GET /api/v1/vulnerabilities` | Filtered, paginated operations queue and top-500 globe records |
+| `GET /api/v1/vulnerabilities/{cve_id}` | Details for a selected CVE |
+| `GET /api/v1/evaluation` | Consolidated historical evaluation payload |
+| `GET /api/v1/evaluation/summary` | Aggregate historical ranking metrics |
+| `GET /api/v1/evaluation/results` | Month-by-month historical evaluation results |
 
-Suggested env var (add when wiring fetch):
+`/api/v1/vulnerabilities` supports `q`, `severity`, `kev_only`, `min_risk`,
+`page`, `page_size`, `top_k`, `method`, `sort`, and `order`. The supported
+ranking methods are `direct_risk`, `epss`, `exploit_then_epss`, and `cvss3`.
+The operations queue requests `top_k=500` and displays 25 records per page;
+the globe requests the same top 500 directly.
 
-```bash
-# frontend/.env.local
-VITE_API_BASE_URL=http://127.0.0.1:8000
-```
+The dashboard's three lens controls select the corresponding ranking method:
+semantic language uses EPSS, architectural weakness uses CVSS3, and temporal
+momentum uses public exploit plus EPSS. Selecting a globe point opens its CVE
+details and can route it to the operations queue.
 
-Usage pattern:
+## Backend and scoring prerequisites
 
-```js
-const base = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000'
-const res = await fetch(`${base}/api/clusters`)
-const clusters = await res.json()
-```
+Start the backend from the repository root in a separate terminal:
 
-Optional Vite proxy (avoids CORS in local dev) — in `vite.config.js`:
-
-```js
-export default defineConfig({
-  plugins: [react()],
-  server: {
-    proxy: {
-      '/api': 'http://127.0.0.1:8000',
-    },
-  },
-})
-```
-
-Then call `/api/...` with no host. Backend must enable CORS for `http://localhost:5173` if you skip the proxy (e.g. FastAPI `CORSMiddleware`).
-
-### Payload the UI expects
-
-Replace `buildClusters()` with API data shaped like this (one object per factor node):
-
-```json
-{
-  "id": "c-blue",
-  "name": "Vulnerability Factor X",
-  "label": "Factor X",
-  "color": "#0033FF",
-  "glow": "#6688FF",
-  "risk": "Signal",
-  "signalCount": 12,
-  "riskScore": 78,
-  "dashboard": {
-    "clusterId": "c-blue",
-    "clusterName": "Vulnerability Factor X",
-    "accent": "#0033FF",
-    "metrics": {
-      "analyzed": 2400,
-      "hotspots": 9,
-      "graniteConfidence": 0.91,
-      "exploitRate": 0.27
-    },
-    "weeks": [{ "week": "W1", "detections": 40, "mitigated": 22 }],
-    "riskBreakdown": [
-      { "name": "Critical", "value": 30, "fill": "#FF334B" },
-      { "name": "High", "value": 25, "fill": "#F59E0B" },
-      { "name": "Medium", "value": 20, "fill": "#0033FF" },
-      { "name": "Low", "value": 12, "fill": "#A3A3A3" }
-    ],
-    "vulns": [
-      {
-        "id": "CVE-2024-12345",
-        "title": "Example title",
-        "severity": "Critical",
-        "confidence": 0.88,
-        "exploitProb": 0.42
-      }
-    ]
-  }
-}
-```
-
-Suggested backend routes (not implemented yet):
-
-- `GET /api/clusters` — array of the objects above (powers the globe)
-- `GET /api/clusters/{id}` — single cluster dashboard payload
-- `GET /` — health check (already exists)
-
-### Run both sides
-
-```bash
-# terminal 1
+```powershell
+.\.venv\Scripts\Activate.ps1
 cd backend
-python -m venv .venv
-source .venv/bin/activate   # Windows: .\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-uvicorn main:app --reload --port 8000
-
-# terminal 2
-cd frontend
-npm install
-npm run dev
+uvicorn main:app --reload
 ```
+
+The backend requires the datasets described in the root README. If
+`data/scoreboard_2026_scored.csv` exists, the API serves the Granite-derived
+scored artifact. Otherwise it stays available with the documented direct-risk
+fallback.
+
+Evaluation data is optional for the main queue but required for the
+**Historical evaluation** panel. Generate it from the repository's historical
+signal datasets before starting or refreshing the dashboard:
+
+```bash
+cd backend
+python -m eval.run_backtest
+```
+
+If `vulnerabilities.csv` is unavailable, use `--no-cvss` to skip the CVSS
+baseline. The backend then writes the result and summary CSVs under
+`backend/eval/output/`, which the evaluation endpoints read.
 
 ## Links
 
-Repo / nav links live in `src/data/links.js` (`SITE_LINKS.github`, `SITE_LINKS.devpost`).
+Repository and Devpost links are defined in `src/data/links.js`.

@@ -34,7 +34,11 @@ ibm-granite/granite-embedding-small-english-r2
 
 The model converts vulnerability descriptions into numerical embedding vectors
 for downstream analysis and ranking. It is loaded by
-`backend/core/embedder.py` with `sentence-transformers`.
+`backend/core/embedder.py` with `sentence-transformers`. The training pipeline
+uses those embeddings with a Logistic Regression classifier and writes a
+reusable scored scoreboard artifact. The live vulnerability API serves
+Granite-derived scores when that artifact exists and reports a direct-risk
+fallback otherwise.
 
 Hugging Face authentication is optional for public model downloads. If a token
 is used, store it locally in the ignored `.env` file:
@@ -84,7 +88,8 @@ npm install
 ### Dataset setup
 
 The large CSV datasets are intentionally excluded from GitHub. Download or
-copy the dataset files separately into:
+copy the dataset files separately into `data/` before running the API,
+embedding pipeline, model trainer, or historical evaluation:
 
 ```text
 data/
@@ -110,6 +115,27 @@ test -f data/vulnerabilities.csv \
   && echo "Dataset found" \
   || { echo "Dataset missing: copy vulnerabilities.csv to data/"; exit 1; }
 ```
+
+At minimum, the live API needs `scoreboard_2026.csv` and the exploit-signal
+columns it contains. The historical evaluation needs the monthly exploit
+signal files (`exploit_signals_2024.csv` and `exploit_signals_2025.csv`) and
+`known_exploited.csv`; include `vulnerabilities.csv` to run the CVSS baseline.
+The Granite training path additionally needs a cleaned vulnerability file
+with descriptions and the generated `vulnerabilities_embedded.csv`.
+
+The generated files are not downloads: create them locally as follows:
+
+```bash
+cd backend
+python core/dataprocesser.py
+python core/embedder.py
+python core/model_trainer.py
+```
+
+These commands produce the cleaned/embedded data, the Granite model artifact,
+`data/scoreboard_2026_scored.csv`, and `data/top500.csv`. Run the model
+trainer only after both the embedded data and `known_exploited.csv` are
+available.
 
 ## Run the backend and frontend simultaneously
 
@@ -150,6 +176,27 @@ To test the connection, start both terminals above, open a cluster dashboard,
 and confirm that the **Historical evaluation** panel shows **Connected**.
 If the backend is stopped, the panel reports the request error instead.
 
+## Run with Docker Compose
+
+Docker deployment keeps the large datasets outside the images. Copy the
+datasets listed above into `data/` first, then run from the repository root:
+
+```bash
+docker compose up --build
+```
+
+The production frontend is available at http://localhost:5173 and the API at
+http://localhost:8000. The backend mounts `data/` read-only; no credentials or
+dataset files are copied into either image. To point the built frontend at a
+different public API URL, set `VITE_API_URL` when building:
+
+```bash
+VITE_API_URL=https://api.example.com docker compose up --build
+```
+
+Keep tokens such as `HF_TOKEN` in an ignored local `.env` or in the deployment
+platform's secret manager; do not add them to Compose files or Docker images.
+
 ## Evaluation API
 
 After running the historical backtest, the backend exposes:
@@ -165,6 +212,30 @@ Run the backtest from the repository root:
 cd backend
 python -m eval.run_backtest
 ```
+
+### Build the Granite ranking artifact
+
+After generating `data/vulnerabilities_embedded.csv`, train the Granite
+classifier and score the live scoreboard:
+
+```bash
+cd backend
+python core/model_trainer.py
+```
+
+This creates `backend/artifacts/granite_risk_model.joblib`,
+`data/scoreboard_2026_scored.csv`, and `data/top500.csv`. The API automatically
+uses `data/scoreboard_2026_scored.csv` when present. Without it, the API
+remains available using the documented direct-risk fallback formula.
+
+### Chosen live scoring policy
+
+The live API uses the Granite-derived scored artifact whenever
+`data/scoreboard_2026_scored.csv` is present. If that artifact has not been
+generated, it deliberately falls back to the
+direct-risk score (`0.6 * EPSS + 0.4 * exploit-signal score`) rather than
+failing or silently returning an unscored response. The API health response
+exposes `granite_model_available` so clients can show which path is active.
 
 Start the API in another terminal:
 
@@ -182,6 +253,7 @@ GET /api/v1/health
 GET /api/v1/risk/summary
 GET /api/v1/vulnerabilities
 GET /api/v1/vulnerabilities/{cve_id}
+GET /api/v1/evaluation
 GET /api/v1/evaluation/results
 GET /api/v1/evaluation/summary
 ```
@@ -217,4 +289,21 @@ The direct risk score combines the EPSS score and exploit signals:
 
 ```text
 direct_risk_score = 0.6 * EPSS + 0.4 * exploit_signal_score
+```
+
+When Granite artifacts have been generated, the served score combines the
+classifier prediction with the direct-risk score:
+
+```text
+risk_score = 0.5 * model_prediction_probability + 0.5 * direct_risk_score
+```
+
+Sphere and queue categories use percentile bands within the selected top-500
+ranking rather than fixed score cutoffs:
+
+```text
+Critical = top 5%
+High     = next 15%
+Medium   = next 30%
+Low      = remaining 50%
 ```

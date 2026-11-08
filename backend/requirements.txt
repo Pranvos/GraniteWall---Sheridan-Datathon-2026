@@ -1,6 +1,9 @@
-fastapi
-uvicorn[standard]
-pandas
-scikit-learn
-transformers
-sentence-transformers
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+pandas==2.2.3
+scikit-learn==1.6.1
+transformers==4.48.3
+sentence-transformers==3.4.1
+joblib==1.4.2
+pytest==8.3.4
+httpx==0.28.1

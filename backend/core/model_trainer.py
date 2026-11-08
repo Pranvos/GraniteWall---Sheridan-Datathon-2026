@@ -1,12 +1,27 @@
 import pandas as pd
 import numpy as np
 from sklearn.linear_model import LogisticRegression
+import joblib
 from pathlib import Path
 import ast
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DATA_DIR = REPO_ROOT / "data"
+MODEL_DIR = REPO_ROOT / "backend" / "artifacts"
+MODEL_PATH = MODEL_DIR / "granite_risk_model.joblib"
+SCORED_PATH = DATA_DIR / "scoreboard_2026_scored.csv"
 SIGNAL_COLUMNS = ["exploitdb", "metasploit", "nuclei", "poc_github"]
+
+
+def percentile_categories(frame: pd.DataFrame, score_column: str = "risk_score") -> pd.Series:
+    """Assign balanced display categories within a ranked result set."""
+    ranked = frame[score_column].rank(method="first", ascending=False, pct=True)
+    return pd.cut(
+        ranked,
+        bins=[0, 0.05, 0.20, 0.50, 1.0],
+        labels=["Critical", "High", "Medium", "Low"],
+        include_lowest=True,
+    ).astype(str)
 
 
 def train_and_rank():
@@ -62,24 +77,39 @@ def train_and_rank():
         0.6 * df_score["epss_score"] + 0.4 * df_score["exploit_signal_score"]
     )
 
-    if "embedding" in df_score.columns:
-        if isinstance(df_score["embedding"].iloc[0], str):
-            df_score["embedding"] = df_score["embedding"].apply(ast.literal_eval)
-        X_score = np.array(df_score["embedding"].tolist())
-        df_score["model_prediction_probability"] = model.predict_proba(X_score)[:, 1]
+    if "embedding" not in df_score.columns:
+        embedding_lookup = df_embedded[["cve_id", "embedding"]].drop_duplicates("cve_id")
+        df_score = df_score.merge(embedding_lookup, on="cve_id", how="left")
+
+    has_embedding = df_score["embedding"].notna()
+    if has_embedding.any():
+        embeddings = df_score.loc[has_embedding, "embedding"]
+        if isinstance(embeddings.iloc[0], str):
+            embeddings = embeddings.apply(ast.literal_eval)
+        X_score = np.array(embeddings.tolist())
+        df_score["model_prediction_probability"] = np.nan
+        df_score.loc[has_embedding, "model_prediction_probability"] = model.predict_proba(X_score)[:, 1]
         df_score["risk_score"] = (
-            0.5 * df_score["model_prediction_probability"]
+            0.5 * df_score["model_prediction_probability"].fillna(0)
             + 0.5 * df_score["direct_risk_score"]
         )
     else:
-        df_score["model_prediction_probability"] = np.nan
-        df_score["risk_score"] = df_score["direct_risk_score"]
+        raise ValueError(
+            "No scoreboard records matched embedded vulnerability descriptions. "
+            "Generate embeddings from a dataset containing the scoreboard CVE IDs."
+        )
 
     df_sorted = df_score.sort_values(by="risk_score", ascending=False)
+    top_500 = df_sorted.head(500).copy()
+    top_500["severity_category"] = percentile_categories(top_500)
 
-    top_500 = df_sorted.head(500)
+    MODEL_DIR.mkdir(parents=True, exist_ok=True)
+    joblib.dump(model, MODEL_PATH)
+    df_score.drop(columns=["embedding"], errors="ignore").to_csv(SCORED_PATH, index=False)
     output_path = DATA_DIR / "top500.csv"
-    top_500[["cve_id"]].to_csv(output_path, index=False)
+    top_500[["cve_id", "risk_score", "severity_category"]].to_csv(output_path, index=False)
+    print(f"Saved Granite model to {MODEL_PATH}")
+    print(f"Saved scored scoreboard to {SCORED_PATH}")
     print("Generated top500.csv successfully.")
 
 if __name__ == "__main__":

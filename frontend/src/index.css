@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+@keyframes wall-drift {
+  0%, 100% { transform: rotateX(1deg) rotateY(-2deg) translate3d(0, 0, 0); }
+  35% { transform: rotateX(1.5deg) rotateY(-1deg) translate3d(1px, -2px, 8px); }
+  68% { transform: rotateX(0.5deg) rotateY(-2.5deg) translate3d(-2px, 1px, 3px); }
+}
+
 :root { color-scheme: dark; font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-synthesis: none; text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased; }
 * { box-sizing: border-box; }
 html, body, #root { margin: 0; min-height: 100%; background: #070b14; }

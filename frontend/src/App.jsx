@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   AlertTriangle,
   BarChart3,
@@ -66,8 +66,17 @@ function SiemConsole({ activeLens }) {
   const [selected, setSelected] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [evaluation, setEvaluation] = useState({ status: 'loading', error: '' })
   const [lastUpdated, setLastUpdated] = useState(null)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [activeTab, setActiveTab] = useState('overview')
+  const tabs = [
+    ['overview', LayoutDashboard, 'Overview'],
+    ['queue', AlertTriangle, 'Vulnerability queue'],
+    ['signals', Signal, 'Threat signals'],
+    ['rankings', BarChart3, 'Risk rankings'],
+    ['pipeline', Database, 'Data pipeline'],
+  ]
 
   useEffect(() => {
     if (!activeLens) return
@@ -79,23 +88,39 @@ function SiemConsole({ activeLens }) {
   const load = useCallback(async () => {
     setLoading(true)
     setError('')
+    setEvaluation({ status: 'loading', error: '' })
+
+    const dashboardRequest = Promise.all([
+      fetch(`${API_BASE_URL}/api/v1/health`).then((response) => response.json()),
+      fetch(`${API_BASE_URL}/api/v1/risk/summary`).then((response) => response.json()),
+      fetch(`${API_BASE_URL}/api/v1/vulnerabilities?${new URLSearchParams({ ...(query ? { q: query } : {}), ...(severity ? { severity } : {}), kev_only: kevOnly, method, page, page_size: 25, top_k: 500 })}`).then(async (response) => {
+        if (!response.ok) throw new Error((await response.json()).detail || 'Vulnerability request failed')
+        return response.json()
+      }),
+    ])
+    const evaluationRequest = Promise.all([fetchEvaluationSummary(), fetchEvaluationResults()])
+
+    evaluationRequest
+      .then(([summaryResponse, resultResponse]) => {
+        setSummary(normalizeEvaluationSummary(summaryResponse.summary || []))
+        setResults(normalizeEvaluationResults(resultResponse.results || []))
+        setEvaluation({ status: 'ready', error: '' })
+      })
+      .catch((evaluationError) => {
+        setSummary([])
+        setResults([])
+        setEvaluation({
+          status: 'error',
+          error: evaluationError.message || 'Evaluation data is unavailable.',
+        })
+      })
+
     try {
-      const [healthResponse, riskResponse, vulnerabilityResponse, summaryResponse, resultResponse] = await Promise.all([
-        fetch(`${API_BASE_URL}/api/v1/health`).then((response) => response.json()),
-        fetch(`${API_BASE_URL}/api/v1/risk/summary`).then((response) => response.json()),
-        fetch(`${API_BASE_URL}/api/v1/vulnerabilities?${new URLSearchParams({ ...(query ? { q: query } : {}), ...(severity ? { severity } : {}), kev_only: kevOnly, method, page, page_size: 25, top_k: 500 })}`).then(async (response) => {
-          if (!response.ok) throw new Error((await response.json()).detail || 'Vulnerability request failed')
-          return response.json()
-        }),
-        fetchEvaluationSummary(),
-        fetchEvaluationResults(),
-      ])
+      const [healthResponse, riskResponse, vulnerabilityResponse] = await dashboardRequest
       setHealth(healthResponse)
       setRiskSummary(riskResponse)
       setItems(vulnerabilityResponse.items)
       setTotal(vulnerabilityResponse.total)
-      setSummary(normalizeEvaluationSummary(summaryResponse.summary || []))
-      setResults(normalizeEvaluationResults(resultResponse.results || []))
       setLastUpdated(new Date())
     } catch (requestError) {
       setError(requestError.message)
@@ -126,8 +151,8 @@ function SiemConsole({ activeLens }) {
           <div><div className="font-mono text-sm font-bold tracking-widest text-slate-100">GRANITEWALL</div><div className="font-mono text-[9px] uppercase text-slate-500">Security operations</div></div>
         </button>
         <nav className="mt-7 space-y-1">
-          {[[LayoutDashboard, 'Overview'], [AlertTriangle, 'Vulnerability queue'], [Signal, 'Threat signals'], [BarChart3, 'Risk rankings'], [Database, 'Data pipeline']].map(([Icon, label], index) => (
-            <button key={label} className={`flex w-full items-center gap-3 rounded px-3 py-2.5 text-left text-xs ${index === 0 ? 'bg-cyan-400/10 text-cyan-300' : 'text-slate-400 hover:bg-slate-800/70 hover:text-slate-200'}`}><Icon size={15} />{label}</button>
+          {tabs.map(([id, Icon, label]) => (
+            <button key={id} type="button" onClick={() => { setActiveTab(id); setSidebarOpen(false) }} className={`flex w-full items-center gap-3 rounded px-3 py-2.5 text-left text-xs ${activeTab === id ? 'bg-cyan-400/10 text-cyan-300' : 'text-slate-400 hover:bg-slate-800/70 hover:text-slate-200'}`}><Icon size={15} />{label}</button>
           ))}
         </nav>
         <div className="absolute bottom-5 left-5 right-5 border-t border-slate-800 pt-4">
@@ -147,24 +172,39 @@ function SiemConsole({ activeLens }) {
             <select value={method} onChange={(event) => { setPage(1); setMethod(event.target.value) }} className="soc-select"><option value="direct_risk">Granite direct risk</option><option value="exploit_then_epss">Public exploit + EPSS</option><option value="epss">EPSS first</option><option value="cvss3">CVSS 3 first</option></select>
             <button onClick={() => { setPage(1); setKevOnly((value) => !value) }} className={`soc-button ${kevOnly ? 'border-red-400/60 bg-red-400/10 text-red-300' : ''}`}><SlidersHorizontal size={14} /> KEV only</button>
           </div>
+          <nav className="mt-4 flex gap-2 overflow-x-auto border-t border-slate-800 pt-3" aria-label="Operations sections">
+            {tabs.map(([id, Icon, label]) => (
+              <button key={id} type="button" onClick={() => setActiveTab(id)} className={`inline-flex shrink-0 items-center gap-2 rounded border px-3 py-2 font-mono text-[10px] uppercase tracking-wider transition ${activeTab === id ? 'border-cyan-300 bg-cyan-300/10 text-cyan-200' : 'border-slate-700 text-slate-500 hover:border-slate-500 hover:text-slate-300'}`}><Icon size={13} />{label}</button>
+            ))}
+          </nav>
         </header>
 
         <div className="space-y-5 p-4 md:p-7">
           {error ? <div className="soc-alert"><AlertTriangle size={16} /> Backend offline: {error}<button onClick={load} className="ml-auto underline">Retry</button></div> : null}
-          <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          {activeTab === 'overview' ? <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <Stat label="Vulnerabilities" value={riskSummary?.total?.toLocaleString() || '—'} detail="scoreboard records indexed" icon={Database} />
             <Stat label="Critical risk" value={riskSummary?.critical?.toLocaleString() || '—'} detail="risk score ≥ 0.75" icon={AlertTriangle} tone="red" />
             <Stat label="Known exploited" value={riskSummary?.kev?.toLocaleString() || '—'} detail="CISA KEV matches" icon={ShieldCheck} tone="amber" />
             <Stat label="Active signals" value={riskSummary?.active_signals?.toLocaleString() || '—'} detail="records with exploit evidence" icon={Signal} tone="violet" />
-          </section>
+          </section> : null}
 
-          <EvaluationInsights summary={summary} results={results} loading={loading} />
+          {activeTab === 'rankings' ? <EvaluationInsights summary={summary} results={results} loading={evaluation.status === 'loading'} error={evaluation.status === 'error' ? evaluation.error : ''} /> : null}
 
-          <section className="soc-panel overflow-hidden">
+          {activeTab === 'queue' ? <section className="soc-panel overflow-hidden">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 px-5 py-4"><div><h2 className="panel-title">Top 500 vulnerability queue</h2><p className="panel-subtitle">{total.toLocaleString()} highest-ranked records · {method.replaceAll('_', ' ')}</p></div><div className="flex items-center gap-2 font-mono text-[10px] uppercase text-slate-500"><Eye size={14} /> analyst view</div></div>
             <div className="overflow-x-auto"><table className="w-full min-w-[850px] text-left"><thead><tr className="border-b border-slate-800 bg-slate-900/40 font-mono text-[10px] uppercase tracking-wider text-slate-500"><th className="px-5 py-3">CVE</th><th className="px-3 py-3">Severity</th><th className="px-3 py-3">EPSS</th><th className="px-3 py-3">Signals</th><th className="px-3 py-3">Risk score</th><th className="px-3 py-3">KEV</th><th className="px-5 py-3 text-right">Inspect</th></tr></thead><tbody>{items.map((item) => { const level = severityFor(item.risk_score); return <tr key={item.cve_id} className="border-b border-slate-800/70 text-sm hover:bg-cyan-400/[0.03]"><td className="px-5 py-3 font-mono text-xs text-cyan-300">{item.cve_id}<div className="text-[10px] text-slate-600">{item.published || 'date unavailable'}</div></td><td className="px-3 py-3"><Badge>{level}</Badge></td><td className="px-3 py-3 font-mono text-xs">{Number(item.epss).toFixed(4)}</td><td className="px-3 py-3 font-mono text-xs">{item.exploit_signal_count}/4</td><td className="px-3 py-3 font-mono text-xs font-semibold text-slate-100">{Number(item.risk_score).toFixed(4)}</td><td className="px-3 py-3">{item.is_kev ? <Badge tone="border-red-500/30 bg-red-500/10 text-red-300">confirmed</Badge> : <span className="font-mono text-[10px] text-slate-600">—</span>}</td><td className="px-5 py-3 text-right"><button onClick={() => openDetails(item)} className="text-slate-500 hover:text-cyan-300"><Eye size={16} /></button></td></tr> })}</tbody></table>{!items.length && !loading ? <EmptyState /> : null}</div>
             <div className="flex items-center justify-between border-t border-slate-800 px-5 py-3 font-mono text-[10px] text-slate-500"><span>PAGE {page} / {Math.max(1, Math.ceil(total / 25))}</span><div className="flex gap-2"><button disabled={page === 1} onClick={() => setPage((value) => value - 1)} className="soc-icon-button"><ChevronLeft size={14} /></button><button disabled={page >= Math.ceil(total / 25)} onClick={() => setPage((value) => value + 1)} className="soc-icon-button"><ChevronRight size={14} /></button></div></div>
-          </section>
+          </section> : null}
+
+          {activeTab === 'signals' ? <section className="grid gap-5 md:grid-cols-2">
+            <section className="soc-panel p-5"><h2 className="panel-title">Threat signals</h2><p className="panel-subtitle">Exploit evidence currently indexed by source.</p><div className="mt-5 space-y-3">{Object.entries(riskSummary?.signal_breakdown || {}).map(([source, count]) => <div key={source} className="flex items-center justify-between border-b border-slate-800 pb-3 font-mono text-xs"><span className="uppercase text-slate-400">{source.replaceAll('_', ' ')}</span><span className="text-cyan-300">{Number(count).toLocaleString()}</span></div>)}</div></section>
+            <section className="soc-panel p-5"><h2 className="panel-title">Known exploited vulnerabilities</h2><p className="panel-subtitle">CISA KEV records available to the ranking service.</p><div className="mt-6 font-mono text-4xl text-red-300">{riskSummary?.kev?.toLocaleString() || '—'}</div><p className="mt-2 text-xs text-slate-500">Use the queue tab to inspect individual records.</p></section>
+          </section> : null}
+
+          {activeTab === 'pipeline' ? <section className="grid gap-5 md:grid-cols-2">
+            <section className="soc-panel p-5"><h2 className="panel-title">Data pipeline</h2><p className="panel-subtitle">Live source and model readiness.</p><div className="mt-5 space-y-3 font-mono text-xs">{[['API status', connected ? 'online' : 'offline'], ['Scoreboard', health?.scoreboard_available ? 'available' : 'missing'], ['Granite artifact', health?.granite_model_available ? 'available' : 'direct-risk fallback'], ['Evaluation feed', evaluation.status === 'ready' ? 'available' : 'unavailable']].map(([label, value]) => <div key={label} className="flex justify-between border-b border-slate-800 pb-3"><span className="text-slate-400">{label}</span><span className={value === 'offline' || value === 'missing' || value === 'unavailable' ? 'text-amber-300' : 'text-emerald-300'}>{value}</span></div>)}</div></section>
+            <section className="soc-panel p-5"><h2 className="panel-title">Current ranking mode</h2><p className="panel-subtitle">The queue and globe use the selected ranking method.</p><div className="mt-6 font-mono text-xl text-cyan-300">{method.replaceAll('_', ' ')}</div><p className="mt-2 text-xs text-slate-500">Refresh after rebuilding model or evaluation artifacts.</p></section>
+          </section> : null}
         </div>
       </main>
 
@@ -178,18 +218,49 @@ function EmptyState({ loading }) { return <div className="grid h-full min-h-32 p
 
 function LandingPage({ activeLens, onEnter, riskPoints, selectedCategory, onCategoryChange, selectedPoint, onPointSelect }) {
   const lensClusters = useMemo(() => buildLandingClusters(), [])
-  const visiblePoints = riskPoints.filter((point) => (
+  const eligiblePoints = useMemo(() => riskPoints.filter((point) => (
     point.category !== 'Low'
     && (selectedCategory === 'all' || point.category.toLowerCase() === selectedCategory)
-  ))
+  )), [riskPoints, selectedCategory])
+  const visitedIds = useRef(new Set())
+  const [visiblePoints, setVisiblePoints] = useState([])
+
+  useEffect(() => {
+    const available = eligiblePoints.filter((point) => !visitedIds.current.has(point.id))
+    const pool = available.length >= Math.min(180, eligiblePoints.length) ? available : eligiblePoints
+    setVisiblePoints(shufflePoints(pool).slice(0, 180))
+  }, [eligiblePoints])
+
+  const cycleNodes = useCallback(() => {
+    const available = shufflePoints(eligiblePoints.filter((point) => (
+      !visitedIds.current.has(point.id)
+      && !visiblePoints.some((visible) => visible.id === point.id)
+    )))
+    if (!available.length) return
+    const replaceCount = Math.min(12, visiblePoints.length, available.length)
+    const replacements = available.slice(0, replaceCount)
+    setVisiblePoints((current) => [
+      ...current.slice(replaceCount),
+      ...replacements,
+    ])
+  }, [eligiblePoints, visiblePoints])
 
   const handleSelect = useCallback((cluster, origin) => {
     if (cluster.cve_id) {
+      visitedIds.current.add(cluster.id)
       onPointSelect(cluster)
+      setVisiblePoints((current) => {
+        const available = eligiblePoints.filter((point) => (
+          !visitedIds.current.has(point.id)
+          && !current.some((visible) => visible.id === point.id)
+        ))
+        const replacement = shufflePoints(available)[0]
+        return replacement ? [...current.filter((point) => point.id !== cluster.id), replacement] : current
+      })
       return
     }
     onEnter(cluster, origin || originFromElement(null))
-  }, [onEnter, onPointSelect])
+  }, [eligiblePoints, onEnter, onPointSelect])
 
   return (
     <div id="top" className="relative overflow-x-hidden bg-[#070b14] text-slate-200">
@@ -229,7 +300,7 @@ function LandingPage({ activeLens, onEnter, riskPoints, selectedCategory, onCate
             </div>
           </div>
           <p className="mt-8 hidden select-text font-mono text-[10px] uppercase leading-relaxed tracking-[0.22em] text-slate-600 lg:block">
-            Drag the mesh to rotate
+            Move across the wall to deform the surface
             <br />
             Select a lens to enter SOC
           </p>
@@ -237,12 +308,12 @@ function LandingPage({ activeLens, onEnter, riskPoints, selectedCategory, onCate
         <section className="relative min-h-[58vh] bg-[#070b14] lg:min-h-0">
           <HeroGlobe clusters={visiblePoints} interactive onSelect={handleSelect} />
           <p className="pointer-events-none absolute inset-x-0 bottom-5 z-10 text-center font-mono text-[9px] uppercase tracking-[0.22em] text-slate-600 lg:hidden">
-            Drag the mesh to rotate · select a lens
+            Move across the wall to deform the surface · select a lens
           </p>
         </section>
       </div>
       <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-2 border-b border-slate-800 px-6 py-4 md:px-10">
-        <span className="mr-2 font-mono text-[10px] uppercase tracking-[0.18em] text-slate-500">Sphere points</span>
+        <span className="mr-2 font-mono text-[10px] uppercase tracking-[0.18em] text-slate-500">Wall nodes</span>
         {['all', 'critical', 'high', 'medium'].map((category) => {
           const definition = category === 'all' ? { name: 'All active', color: '#cbd5e1' } : buildRiskCategories({}).find((item) => item.severity === category)
           const count = category === 'all'
@@ -318,6 +389,10 @@ function LandingPage({ activeLens, onEnter, riskPoints, selectedCategory, onCate
   )
 }
 
+function shufflePoints(points) {
+  return [...points].sort(() => Math.random() - 0.5)
+}
+
 function buildLandingClusters() {
   const clusters = buildClusters(42)
   return clusters.map((cluster) => ({
@@ -363,7 +438,7 @@ function App() {
 
 function buildRiskPoints(items) {
   return items.map((item, index) => {
-    const category = severityFor(Number(item.risk_score))
+    const category = item.severity_category || severityFor(Number(item.risk_score))
     const categoryDefinition = buildRiskCategories({})[0]
     const definition = buildRiskCategories({}).find((entry) => entry.name === category) || categoryDefinition
     const goldenAngle = Math.PI * (3 - Math.sqrt(5))

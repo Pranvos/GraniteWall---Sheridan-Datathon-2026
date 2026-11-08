@@ -553,7 +553,7 @@ export default function HeroGlobe({
   return (
     <div ref={wrap} className={`absolute inset-0 h-full w-full ${className}`}>
       <Canvas
-        dpr={[1, 1.8]}
+        dpr={[1, 1.25]}
         camera={{ fov: 42, near: 0.1, far: 100, position: [0, 0, 4.8] }}
         gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
         frameloop={visible ? 'always' : 'never'}
