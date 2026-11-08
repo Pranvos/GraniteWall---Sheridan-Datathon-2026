@@ -23,3 +23,7 @@ ENV/
 .env.*
 .DS_Store
 .vscode/
+
+# Local ignores
+IBM/
+*.pdf
