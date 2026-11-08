@@ -71,7 +71,7 @@ export default function DashboardView({ cluster, brick, onBack, embedded = false
 
         <div className="text-left sm:text-center">
           <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-[#0B0B0B]/4">
-            GraniteWall
+            SonarScan
           </p>
           <h1 className="mt-1 text-xl font-black uppercase tracking-[-0.04em] sm:text-2xl md:text-3xl">
             {dash.clusterName}

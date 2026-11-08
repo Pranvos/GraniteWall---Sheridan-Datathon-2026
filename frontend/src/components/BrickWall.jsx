@@ -154,7 +154,7 @@ export default function BrickWall({ clusters = [], interactive = true, onSelect,
           <WallNode key={cluster.id} cluster={cluster} position={positions[index]} cursor={cursor} onSelect={interactive ? onSelect : undefined} />
         ))}
       </div>
-      <div className="pointer-events-none absolute inset-x-0 top-5 text-center font-mono text-[10px] uppercase tracking-[0.3em] text-slate-600">GraniteWall · interactive risk surface</div>
+      <div className="pointer-events-none absolute inset-x-0 top-5 text-center font-mono text-[10px] uppercase tracking-[0.3em] text-slate-600">SonarScan · interactive risk surface</div>
       <div className="pointer-events-none absolute bottom-5 left-1/2 -translate-x-1/2 font-mono text-[9px] uppercase tracking-[0.2em] text-slate-600">Drag to rotate · move cursor to deform</div>
     </div>
   )

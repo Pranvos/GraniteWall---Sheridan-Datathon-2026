@@ -1,59 +1,21 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import {
   AlertTriangle,
-  BarChart3,
   ChevronLeft,
   ChevronRight,
-  Database,
-  Eye,
-  LayoutDashboard,
-  Lightbulb,
-  RefreshCw,
   Search,
-  Shield,
-  ShieldCheck,
-  Signal,
-  SlidersHorizontal,
   X,
-  Menu,
 } from 'lucide-react'
 import { fetchEvaluationResults, fetchEvaluationSummary, normalizeEvaluationResults, normalizeEvaluationSummary } from './api/evaluation'
-import { buildClusters } from './data/clusters'
-import HeroGlobe from './components/HeroGlobe'
 import SiteNav from './components/SiteNav'
-import { originFromElement } from './hooks/usePortalTransition'
+import GraniteWallHero from './components/threat-radar/GraniteWallHero'
 import EvaluationInsights from './components/EvaluationInsights'
 import EvaluationRecommendations from './components/EvaluationRecommendations'
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000'
 const severityFor = (risk) => (risk >= 0.75 ? 'Critical' : risk >= 0.5 ? 'High' : risk >= 0.25 ? 'Medium' : 'Low')
-const severityStyles = {
-  Critical: 'border-[#ff334b]/40 bg-[#ff334b]/10 text-[#ff334b]',
-  High: 'border-[#f59e0b]/40 bg-[#f59e0b]/10 text-[#f59e0b]',
-  Medium: 'border-[#0f62fe]/40 bg-[#0f62fe]/10 text-[#0f62fe]',
-  Low: 'border-[#3b82f6]/40 bg-[#3b82f6]/10 text-[#3b82f6]',
-}
-
-function Badge({ children, tone }) {
-  return <span className={`inline-flex border px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider ${tone || severityStyles[children] || 'border-black/10 bg-[#f4f4f5] text-[#3f3f46]'}`}>{children}</span>
-}
-
-function Stat({ label, value, detail, icon: Icon, tone = 'cobalt' }) {
-  const iconTone = { cobalt: 'text-[#0f62fe]', red: 'text-[#ff334b]', amber: 'text-[#f59e0b]', violet: 'text-[#0f62fe]' }[tone] || 'text-[#0f62fe]'
-  return (
-    <div className="soc-panel p-4">
-      <div className="flex items-start justify-between text-[#71717a]">
-        <span className="font-mono text-[10px] uppercase tracking-[0.18em]">{label}</span>
-        <Icon size={16} className={iconTone} />
-      </div>
-      <div className="mt-3 font-mono text-2xl font-semibold text-[#0b0b0b]">{value}</div>
-      <div className="mt-1 text-xs text-[#71717a]">{detail}</div>
-    </div>
-  )
-}
 
 function SiemConsole({ activeLens }) {
-  const [health, setHealth] = useState(null)
   const [summary, setSummary] = useState([])
   const [results, setResults] = useState([])
   const [riskSummary, setRiskSummary] = useState(null)
@@ -68,17 +30,14 @@ function SiemConsole({ activeLens }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [evaluation, setEvaluation] = useState({ status: 'loading', error: '' })
-  const [lastUpdated, setLastUpdated] = useState(null)
-  const [sidebarOpen, setSidebarOpen] = useState(false)
   const [activeTab, setActiveTab] = useState('overview')
   const tabs = [
-    ['overview', LayoutDashboard, 'Overview'],
-    ['queue', AlertTriangle, 'Vulnerability queue'],
-    ['signals', Signal, 'Threat signals'],
-    ['rankings', BarChart3, 'Risk rankings'],
-    ['recommendations', Lightbulb, 'Recommendations'],
-    ['pipeline', Database, 'Data pipeline'],
+    ['overview', 'Overview'],
+    ['queue', 'Vulnerability queue'],
+    ['rankings', 'Risk rankings'],
+    ['recommendations', 'Recommendations'],
   ]
+  const activeTabLabel = tabs.find(([id]) => id === activeTab)?.[1] || 'Overview'
 
   useEffect(() => {
     if (!activeLens) return
@@ -93,7 +52,6 @@ function SiemConsole({ activeLens }) {
     setEvaluation({ status: 'loading', error: '' })
 
     const dashboardRequest = Promise.all([
-      fetch(`${API_BASE_URL}/api/v1/health`).then((response) => response.json()),
       fetch(`${API_BASE_URL}/api/v1/risk/summary`).then((response) => response.json()),
       fetch(`${API_BASE_URL}/api/v1/vulnerabilities?${new URLSearchParams({ ...(query ? { q: query } : {}), ...(severity ? { severity } : {}), kev_only: kevOnly, method, page, page_size: 25, top_k: 500 })}`).then(async (response) => {
         if (!response.ok) throw new Error((await response.json()).detail || 'Vulnerability request failed')
@@ -118,15 +76,12 @@ function SiemConsole({ activeLens }) {
       })
 
     try {
-      const [healthResponse, riskResponse, vulnerabilityResponse] = await dashboardRequest
-      setHealth(healthResponse)
+      const [riskResponse, vulnerabilityResponse] = await dashboardRequest
       setRiskSummary(riskResponse)
       setItems(vulnerabilityResponse.items)
       setTotal(vulnerabilityResponse.total)
-      setLastUpdated(new Date())
     } catch (requestError) {
       setError(requestError.message)
-      setHealth(null)
     } finally {
       setLoading(false)
     }
@@ -147,241 +102,126 @@ function SiemConsole({ activeLens }) {
     }
   }
 
-  const connected = Boolean(health?.status === 'ok' && !error)
-
   return (
-    <div id="operations" className="min-h-screen scroll-mt-12 bg-[#f9f9f9] text-[#0b0b0b]">
-      <aside className={`fixed inset-y-0 left-0 z-30 block w-60 border-r border-black/10 bg-white p-5 transition-transform duration-200 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-        <button type="button" onClick={() => document.getElementById('top')?.scrollIntoView({ behavior: 'smooth' })} className="flex items-center gap-3 border-b border-black/10 pb-5 text-left">
-          <div className="grid h-9 w-9 place-items-center bg-[#0f62fe]/10 text-[#0f62fe]"><Shield size={20} /></div>
-          <div><div className="font-mono text-sm font-bold tracking-widest text-[#0b0b0b]">GRANITEWALL</div><div className="font-mono text-[9px] uppercase text-[#71717a]">Security operations</div></div>
-        </button>
-        <nav className="mt-7 space-y-1">
-          {tabs.map(([id, Icon, label]) => (
-            <button key={id} type="button" onClick={() => { setActiveTab(id); setSidebarOpen(false) }} className={`flex w-full items-center gap-3 px-3 py-2.5 text-left text-xs ${activeTab === id ? 'bg-[#0f62fe]/10 text-[#0f62fe]' : 'text-[#71717a] hover:bg-black/[0.03] hover:text-[#0b0b0b]'}`}><Icon size={15} />{label}</button>
-          ))}
-        </nav>
-        <div className="absolute bottom-5 left-5 right-5 border-t border-black/10 pt-4">
-          <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-wider text-[#71717a]"><span className={`h-2 w-2 rounded-full ${connected ? 'bg-[#0f62fe]' : 'bg-[#ff334b]'}`} /> API {connected ? 'online' : 'offline'}</div>
-        </div>
-      </aside>
-
-      <main className={`transition-[margin] duration-200 ${sidebarOpen ? 'lg:ml-60' : ''}`}>
-        <header className="sticky top-0 z-20 border-b border-black/10 bg-white/95 px-4 py-4 backdrop-blur md:px-7">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-start gap-3"><button type="button" onClick={() => setSidebarOpen((open) => !open)} className="soc-button mt-0.5" aria-label={sidebarOpen ? 'Close navigation' : 'Open navigation'}><Menu size={14} /> {sidebarOpen ? 'Hide menu' : 'Menu'}</button><div><div className="font-mono text-[10px] uppercase tracking-[0.2em] text-[#0f62fe]">SOC / vulnerability intelligence</div><h1 className="mt-1 text-xl font-semibold text-[#0b0b0b]">Operations overview</h1>{activeLens ? <p className="mt-2 text-xs text-[#71717a]">Lens: <span className="font-semibold text-[#0b0b0b]">{activeLens.name}</span> · {activeLens.viewHint}</p> : <p className="mt-2 text-xs text-[#71717a]">Choose a sphere node to focus the queue on a meaningful risk lens.</p>}</div></div>
-            <div className="flex items-center gap-3"><span className="hidden font-mono text-[10px] text-[#71717a] sm:block">{lastUpdated ? `UPDATED ${lastUpdated.toLocaleTimeString()}` : 'SYNCING...'}</span><button onClick={load} className="soc-button"><RefreshCw size={14} className={loading ? 'animate-spin' : ''} /> Refresh</button></div>
+    <div
+      id="operations"
+      className="min-h-screen scroll-mt-12 border-t border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]"
+      style={{ fontFamily: 'var(--font-story), Montserrat, sans-serif' }}
+    >
+      <header className="sticky top-0 z-20 border-b border-[var(--line)] bg-[var(--paper)]/90 backdrop-blur-md">
+        <div className="mx-auto flex max-w-[1400px] flex-wrap items-center justify-between gap-4 px-5 py-4 sm:px-8 lg:px-12">
+          <div className="min-w-0">
+            <button
+              type="button"
+              onClick={() => document.getElementById('critical-sonar')?.scrollIntoView({ behavior: 'smooth' })}
+              className="text-[10px] font-bold uppercase tracking-[0.32em] text-[var(--meta)] transition hover:text-[var(--ink)]"
+            >
+              SonarScan · Operations
+            </button>
+            <h1 className="mt-2 text-[clamp(1.35rem,2.4vw,1.75rem)] font-semibold tracking-[-0.03em] text-[var(--ink)]">
+              {activeTabLabel}
+            </h1>
           </div>
-          <nav className="mt-4 flex gap-2 overflow-x-auto border-t border-black/10 pt-3" aria-label="Operations sections">
-            {tabs.map(([id, Icon, label]) => (
-              <button key={id} type="button" onClick={() => setActiveTab(id)} className={`inline-flex shrink-0 items-center gap-2 border px-3 py-2 font-mono text-[10px] uppercase tracking-wider transition ${activeTab === id ? 'border-[#0f62fe] bg-[#0f62fe]/10 text-[#0f62fe]' : 'border-black/10 text-[#71717a] hover:border-black/25 hover:text-[#3f3f46]'}`}><Icon size={13} />{label}</button>
-            ))}
-          </nav>
-        </header>
+        </div>
 
-        <div className="space-y-5 p-4 md:p-7">
-          {error ? <div className="soc-alert"><AlertTriangle size={16} /> Backend offline: {error}<button onClick={load} className="ml-auto underline">Retry</button></div> : null}
-          {activeTab === 'overview' ? <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <Stat label="Vulnerabilities" value={riskSummary?.total?.toLocaleString() || '—'} detail="scoreboard records indexed" icon={Database} />
-            <Stat label="Critical risk" value={riskSummary?.critical?.toLocaleString() || '—'} detail="top 5% of ranked top 500" icon={AlertTriangle} tone="red" />
-            <Stat label="Known exploited" value={(riskSummary?.kev_catalog ?? riskSummary?.kev)?.toLocaleString() || '—'} detail="CISA KEV catalog size" icon={ShieldCheck} tone="amber" />
-            <Stat label="Active signals" value={riskSummary?.active_signals?.toLocaleString() || '—'} detail="records with exploit evidence" icon={Signal} tone="cobalt" />
-          </section> : null}
+        <nav
+          className="mx-auto flex max-w-[1400px] gap-1 overflow-x-auto px-5 sm:px-8 lg:px-12"
+          aria-label="Operations sections"
+        >
+          {tabs.map(([id, label]) => {
+            const active = activeTab === id
+            return (
+              <button
+                key={id}
+                type="button"
+                onClick={() => setActiveTab(id)}
+                className={`shrink-0 border-b-2 px-3 py-3.5 text-[10px] font-bold uppercase tracking-[0.2em] transition sm:px-4 ${
+                  active
+                    ? 'border-[var(--ink)] text-[var(--ink)]'
+                    : 'border-transparent text-[var(--meta)] hover:text-[var(--ink)]'
+                }`}
+              >
+                {label}
+              </button>
+            )
+          })}
+        </nav>
+      </header>
+
+      <main className="mx-auto max-w-[1400px] px-5 py-10 sm:px-8 lg:px-12 lg:py-14">
+          {error ? (
+            <div className="mb-8 flex items-center gap-2 border border-[#A65A48]/35 bg-[#A65A48]/8 px-4 py-3 text-xs text-[#7A3F32]">
+              <AlertTriangle size={16} /> Backend offline: {error}
+              <button type="button" onClick={load} className="ml-auto underline">
+                Retry
+              </button>
+            </div>
+          ) : null}
+          {activeTab === 'overview' ? (
+            <OperationsStory riskSummary={riskSummary} onOpenQueue={() => setActiveTab('queue')} />
+          ) : null}
 
           {activeTab === 'rankings' ? <EvaluationInsights summary={summary} results={results} loading={evaluation.status === 'loading'} error={evaluation.status === 'error' ? evaluation.error : ''} /> : null}
           {activeTab === 'recommendations' ? <EvaluationRecommendations summary={summary} results={results} loading={evaluation.status === 'loading'} error={evaluation.status === 'error' ? evaluation.error : ''} /> : null}
 
-          {activeTab === 'queue' ? <section className="soc-panel overflow-hidden">
-            <div className="border-b border-black/10 px-5 py-4">
-              <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="panel-title">Top 500 vulnerability queue</h2><p className="panel-subtitle">{total.toLocaleString()} highest-ranked records · {method.replaceAll('_', ' ')}</p></div><div className="flex items-center gap-2 font-mono text-[10px] uppercase text-[#71717a]"><Eye size={14} /> analyst view</div></div>
-              <div className="mt-4 flex flex-wrap gap-2" aria-label="Vulnerability queue filters">
-                <label className="flex min-w-56 flex-1 items-center gap-2 border border-black/10 bg-white px-3 py-2 text-[#71717a]"><Search size={15} /><input value={query} onChange={(event) => { setPage(1); setQuery(event.target.value) }} placeholder="Search CVE identifier..." className="w-full bg-transparent font-mono text-xs text-[#0b0b0b] outline-none placeholder:text-[#71717a]" /></label>
-                <select aria-label="Filter by severity" value={severity} onChange={(event) => { setPage(1); setSeverity(event.target.value) }} className="soc-select"><option value="">All severities</option><option value="critical">Critical</option><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option></select>
-                <select aria-label="Ranking method" value={method} onChange={(event) => { setPage(1); setMethod(event.target.value) }} className="soc-select"><option value="direct_risk">Granite direct risk</option><option value="exploit_then_epss">Public exploit + EPSS</option><option value="epss">EPSS first</option><option value="cvss3">CVSS 3 first</option></select>
-                <button type="button" onClick={() => { setPage(1); setKevOnly((value) => !value) }} className={`soc-button ${kevOnly ? 'border-red-400/60 bg-[#ff334b]/10 text-[#ff334b]' : ''}`}><SlidersHorizontal size={14} /> KEV only</button>
-              </div>
-            </div>
-            <div className="overflow-x-auto"><table className="w-full min-w-[850px] text-left"><thead><tr className="border-b border-black/10 bg-black/[0.03] font-mono text-[10px] uppercase tracking-wider text-[#71717a]"><th className="px-5 py-3">CVE</th><th className="px-3 py-3">Severity</th><th className="px-3 py-3">EPSS</th><th className="px-3 py-3">Signals</th><th className="px-3 py-3">Risk score</th><th className="px-3 py-3">KEV</th><th className="px-5 py-3 text-right">Inspect</th></tr></thead><tbody>{items.map((item) => { const level = item.severity_category || severityFor(item.risk_score); return <tr key={item.cve_id} className="border-b border-black/10 text-sm hover:bg-black/[0.02]"><td className="px-5 py-3 font-mono text-xs text-[#0f62fe]">{item.cve_id}<div className="text-[10px] text-[#71717a]">{item.published || 'date unavailable'}</div></td><td className="px-3 py-3"><Badge>{level}</Badge></td><td className="px-3 py-3 font-mono text-xs">{Number(item.epss).toFixed(4)}</td><td className="px-3 py-3 font-mono text-xs">{item.exploit_signal_count}/4</td><td className="px-3 py-3 font-mono text-xs font-semibold text-[#0b0b0b]">{Number(item.risk_score).toFixed(4)}</td><td className="px-3 py-3">{item.is_kev ? <Badge tone="border-[#ff334b]/40 bg-[#ff334b]/10 text-[#ff334b]">confirmed</Badge> : <span className="font-mono text-[10px] text-[#71717a]">—</span>}</td><td className="px-5 py-3 text-right"><button onClick={() => openDetails(item)} className="text-[#71717a] hover:text-[#0f62fe]"><Eye size={16} /></button></td></tr> })}</tbody></table>{!items.length && !loading ? <EmptyState /> : null}</div>
-            <div className="flex items-center justify-between border-t border-black/10 px-5 py-3 font-mono text-[10px] text-[#71717a]"><span>PAGE {page} / {Math.max(1, Math.ceil(total / 25))}</span><div className="flex gap-2"><button disabled={page === 1} onClick={() => setPage((value) => value - 1)} className="soc-icon-button"><ChevronLeft size={14} /></button><button disabled={page >= Math.ceil(total / 25)} onClick={() => setPage((value) => value + 1)} className="soc-icon-button"><ChevronRight size={14} /></button></div></div>
-          </section> : null}
-
-          {activeTab === 'signals' ? <section className="grid gap-5 md:grid-cols-2">
-            <section className="soc-panel p-5"><h2 className="panel-title">Threat signals</h2><p className="panel-subtitle">Exploit evidence currently indexed by source.</p><div className="mt-5 space-y-3">{Object.entries(riskSummary?.signal_breakdown || {}).map(([source, count]) => <div key={source} className="flex items-center justify-between border-b border-black/10 pb-3 font-mono text-xs"><span className="uppercase text-[#71717a]">{source.replaceAll('_', ' ')}</span><span className="text-[#0f62fe]">{Number(count).toLocaleString()}</span></div>)}</div></section>
-            <section className="soc-panel p-5"><h2 className="panel-title">Known exploited vulnerabilities</h2><p className="panel-subtitle">CISA KEV catalog size (scoreboard overlap is often empty by construction).</p><div className="mt-6 font-mono text-4xl text-[#ff334b]">{(riskSummary?.kev_catalog ?? riskSummary?.kev)?.toLocaleString() || '—'}</div><p className="mt-2 text-xs text-[#71717a]">Scoreboard KEV hits in top 500: {riskSummary?.kev?.toLocaleString() || '0'}</p></section>
-          </section> : null}
-
-          {activeTab === 'pipeline' ? <section className="grid gap-5 md:grid-cols-2">
-            <section className="soc-panel p-5"><h2 className="panel-title">Data pipeline</h2><p className="panel-subtitle">Live source and model readiness.</p><div className="mt-5 space-y-3 font-mono text-xs">{[['API status', connected ? 'online' : 'offline'], ['Scoreboard', health?.scoreboard_available ? 'available' : 'missing'], ['Granite artifact', health?.granite_model_available ? 'available' : 'direct-risk fallback'], ['Evaluation feed', evaluation.status === 'ready' ? 'available' : 'unavailable']].map(([label, value]) => <div key={label} className="flex justify-between border-b border-black/10 pb-3"><span className="text-[#71717a]">{label}</span><span className={value === 'offline' || value === 'missing' || value === 'unavailable' ? 'text-[#f59e0b]' : 'text-[#0b0b0b]'}>{value}</span></div>)}</div></section>
-            <section className="soc-panel p-5"><h2 className="panel-title">Current ranking mode</h2><p className="panel-subtitle">The queue and globe use the selected ranking method.</p><div className="mt-6 font-mono text-xl text-[#0f62fe]">{method.replaceAll('_', ' ')}</div><p className="mt-2 text-xs text-[#71717a]">Refresh after rebuilding model or evaluation artifacts.</p></section>
-          </section> : null}
-        </div>
+          {activeTab === 'queue' ? (
+            <VulnerabilityQueue
+              items={items}
+              total={total}
+              page={page}
+              setPage={setPage}
+              query={query}
+              setQuery={setQuery}
+              severity={severity}
+              setSeverity={setSeverity}
+              method={method}
+              setMethod={setMethod}
+              kevOnly={kevOnly}
+              setKevOnly={setKevOnly}
+              loading={loading}
+              onInspect={openDetails}
+            />
+          ) : null}
       </main>
 
-      {selected ? <div className="fixed inset-0 z-40 flex justify-end bg-black/40" onClick={() => setSelected(null)}><section className="h-full w-full max-w-lg overflow-y-auto border-l border-black/10 bg-white p-6" onClick={(event) => event.stopPropagation()}><div className="flex items-center justify-between"><div><div className="font-mono text-[10px] uppercase tracking-widest text-[#0f62fe]">Vulnerability detail</div><h2 className="mt-2 font-mono text-xl text-[#0b0b0b]">{selected.cve_id}</h2></div><button onClick={() => setSelected(null)} className="text-[#71717a] hover:text-[#0b0b0b]"><X /></button></div><div className="mt-6 grid grid-cols-2 gap-3"><Detail label="Risk score" value={Number(selected.risk_score || 0).toFixed(4)} /><Detail label="EPSS" value={Number(selected.epss || 0).toFixed(4)} /><Detail label="Signals" value={`${selected.exploit_signal_count || 0} / 4`} /><Detail label="KEV status" value={selected.is_kev ? 'Confirmed' : 'Not listed'} /></div><div className="mt-5 soc-panel p-4"><div className="panel-subtitle">Description</div><p className="mt-2 text-sm leading-6 text-[#3f3f46]">{selected.description || 'Description is available from the vulnerability dataset when this CVE is resolved.'}</p></div><div className="mt-5 space-y-2">{[['ExploitDB', selected.exploitdb], ['Metasploit', selected.metasploit], ['Nuclei', selected.nuclei], ['GitHub PoC', selected.poc_github]].map(([label, value]) => <div key={label} className="flex justify-between border-b border-black/10 py-3 text-sm"><span className="text-[#71717a]">{label}</span><span className={value > 0 ? 'text-[#f59e0b]' : 'text-[#71717a]'}>{value > 0 ? 'Signal detected' : 'No signal'}</span></div>)}</div></section></div> : null}
-    </div>
-  )
-}
-
-function Detail({ label, value }) { return <div className="soc-panel p-3"><div className="panel-subtitle">{label}</div><div className="mt-2 font-mono text-lg text-[#0b0b0b]">{value}</div></div> }
-function EmptyState({ loading }) { return <div className="grid h-full min-h-32 place-items-center font-mono text-xs uppercase tracking-widest text-[#71717a]">{loading ? 'Loading telemetry...' : 'No telemetry available'}</div> }
-
-function LandingPage({ activeLens, onEnter, riskPoints, selectedCategory, onCategoryChange, selectedPoint, onPointSelect }) {
-  const lensClusters = useMemo(() => buildLandingClusters(), [])
-  // One persistent hub per severity — always on the wall, never a blank globe
-  const wallHubs = useMemo(() => {
-    const counts = riskPoints.reduce((acc, point) => {
-      acc[point.category] = (acc[point.category] || 0) + 1
-      return acc
-    }, {})
-    return buildRiskCategories(counts).map((cluster, index) => {
-      const seat = [
-        [1, 1, 1],
-        [1, -1, -1],
-        [-1, 1, -1],
-        [-1, -1, 1],
-      ][index]
-      const length = Math.hypot(seat[0], seat[1], seat[2]) || 1
-      return {
-        ...cluster,
-        category: cluster.name,
-        showLabel: true,
-        persistVisible: true,
-        dotRadius: 0.045,
-        basePosition: seat.map((n) => (n / length) * 1.55),
-      }
-    })
-  }, [riskPoints])
-
-  const handleSelect = useCallback((cluster, origin) => {
-    if (cluster.cve_id) {
-      onPointSelect(cluster)
-      return
-    }
-    if (cluster.severity) {
-      onCategoryChange(cluster.severity)
-    }
-    onEnter(cluster, origin || originFromElement(null))
-  }, [onEnter, onPointSelect, onCategoryChange])
-
-  return (
-    <div id="top" className="relative overflow-x-hidden bg-[#f9f9f9] text-[#0b0b0b]">
-      <SiteNav />
-      <div className="grid min-h-[calc(100dvh-49px)] border-b border-black/10 lg:grid-cols-[minmax(19rem,34%)_minmax(0,1fr)]">
-        <aside className="relative z-10 flex flex-col justify-between border-b border-black/10 bg-white px-6 py-8 md:px-10 md:py-10 lg:border-b-0 lg:border-r">
-          <div className="select-text">
-            <p className="font-mono text-[10px] uppercase tracking-[0.36em] text-[#0f62fe]">
-              IBM Granite · Datathon
-            </p>
-            <h1 className="mt-4 text-6xl font-bold uppercase leading-[0.9] tracking-[-0.04em] text-[#0b0b0b] md:text-7xl">
-              Granite
-              <br />
-              Wall
-            </h1>
-            <div className="mt-8 max-w-sm">
-              <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-[#71717a]">
-                Threat intelligence map
-              </p>
-              <p className="mt-3 text-sm leading-relaxed text-[#71717a]">
-                Read vulnerability risk through three connected lenses:
-                attacker intent, the broken software architecture, and the
-                speed at which exploitation is moving.
+      {selected ? (
+        <div className="fixed inset-0 z-40 flex justify-end bg-black/30" onClick={() => setSelected(null)}>
+          <section
+            className="h-full w-full max-w-lg overflow-y-auto border-l border-[var(--line)] bg-[var(--paper)] p-8"
+            style={{ fontFamily: 'var(--font-story), Montserrat, sans-serif' }}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-[var(--meta)]">Selected CVE</p>
+                <h2 className="mt-2 font-mono text-xl tracking-tight text-[var(--ink)]">{selected.cve_id}</h2>
+              </div>
+              <button type="button" onClick={() => setSelected(null)} className="text-[var(--meta)] transition hover:text-[var(--ink)]" aria-label="Close">
+                <X size={18} />
+              </button>
+            </div>
+            <div className="mt-8 grid grid-cols-2 gap-x-6 gap-y-8 border-y border-[var(--line)] py-8">
+              <Detail label="Risk score" value={Number(selected.risk_score || 0).toFixed(4)} />
+              <Detail label="EPSS" value={Number(selected.epss || 0).toFixed(4)} />
+              <Detail label="Signals" value={`${selected.exploit_signal_count || 0} / 4`} />
+              <Detail label="KEV" value={selected.is_kev ? 'Confirmed' : 'Not listed'} />
+            </div>
+            <div className="mt-8">
+              <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--meta)]">Description</p>
+              <p className="mt-3 text-[15px] leading-relaxed text-[var(--meta)]">
+                {selected.description || 'Description is available from the vulnerability dataset when this CVE is resolved.'}
               </p>
             </div>
-            <div className="mt-8 space-y-3 border-t border-black/10 pt-5">
-              {buildRiskCategories({}).map((cluster) => (
-                <div key={cluster.id} className="flex items-start gap-3 text-xs">
-                  <span className="mt-1 h-2 w-2 shrink-0 rounded-full " style={{ backgroundColor: cluster.color }} />
-                  <button type="button" onClick={() => onCategoryChange(cluster.severity)} className="text-left transition hover:text-[#0f62fe]">
-                    <p className="font-mono text-[10px] uppercase tracking-[0.14em]">{cluster.name}</p>
-                    <p className="mt-1 text-[#71717a]">{cluster.description} · {riskPoints.filter((point) => point.category === cluster.name).length}</p>
-                  </button>
+            <div className="mt-8 space-y-0 border-t border-[var(--line)]">
+              {[['ExploitDB', selected.exploitdb], ['Metasploit', selected.metasploit], ['Nuclei', selected.nuclei], ['GitHub PoC', selected.poc_github]].map(([label, value]) => (
+                <div key={label} className="flex justify-between border-b border-[var(--line)] py-4 text-sm">
+                  <span className="text-[var(--meta)]">{label}</span>
+                  <span className={value > 0 ? 'font-medium text-[var(--ink)]' : 'text-[var(--meta-soft)]'}>
+                    {value > 0 ? 'Signal present' : 'None'}
+                  </span>
                 </div>
               ))}
             </div>
-          </div>
-          <p className="mt-8 hidden select-text font-mono text-[10px] uppercase leading-relaxed tracking-[0.22em] text-[#71717a] lg:block">
-            Move across the wall to deform the surface
-            <br />
-            Select a lens to enter SOC
-          </p>
-        </aside>
-        <section className="relative min-h-[58vh] bg-[#f9f9f9] lg:min-h-0">
-          <HeroGlobe clusters={wallHubs} selectedCategory={selectedCategory} interactive onSelect={handleSelect} />
-          <p className="pointer-events-none absolute inset-x-0 bottom-5 z-10 text-center font-mono text-[9px] uppercase tracking-[0.22em] text-[#71717a] lg:hidden">
-            Move across the wall to deform the surface · select a lens
-          </p>
-        </section>
-      </div>
-      <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-2 border-b border-black/10 px-6 py-4 md:px-10">
-        <span className="mr-2 font-mono text-[10px] uppercase tracking-[0.18em] text-[#71717a]">Wall nodes</span>
-        {['all', 'critical', 'high', 'medium', 'low'].map((category) => {
-          const definition = category === 'all' ? { name: 'All bands', color: '#a1a1aa' } : buildRiskCategories({}).find((item) => item.severity === category)
-          const count = category === 'all'
-            ? riskPoints.length
-            : riskPoints.filter((point) => point.category.toLowerCase() === category).length
-          return (
-            <button
-              key={category}
-              type="button"
-              onClick={() => onCategoryChange(category)}
-              className={`inline-flex items-center gap-2 border px-3 py-2 font-mono text-[10px] uppercase tracking-wider transition ${selectedCategory === category ? 'border-[#0f62fe] bg-[#0f62fe]/10 text-[#0f62fe]' : 'border-black/10 text-[#71717a] hover:border-black/25'}`}
-            >
-              <span className="h-2 w-2 rounded-full" style={{ backgroundColor: definition.color }} />
-              {definition.name} ({count})
-            </button>
-          )
-        })}
-      </div>
-      <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 border-b border-black/10 px-6 py-5 md:px-10">
-        <div>
-          <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-[#0f62fe]">Three lenses · one risk surface</p>
-          <p className="mt-1 text-sm text-[#71717a]">Select a node to tune the live queue and ranking view.</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {lensClusters.map((cluster) => (
-            <button key={cluster.id} type="button" onClick={() => onEnter(cluster)} className="border border-black/10 px-3 py-2 font-mono text-[10px] uppercase tracking-wider text-[#3f3f46] transition hover:border-[#0f62fe]/60 hover:text-[#0f62fe]">
-              {cluster.view}: {cluster.method.replaceAll('_', ' ')}
-            </button>
-          ))}
-        </div>
-      </div>
-      <SiemConsole activeLens={activeLens} />
-      {selectedPoint ? (
-        <div className="fixed inset-0 z-50 flex justify-end bg-black/40" onClick={() => onPointSelect(null)}>
-          <section className="h-full w-full max-w-md overflow-y-auto border-l border-black/10 bg-white p-6" onClick={(event) => event.stopPropagation()}>
-            <div className="flex items-start justify-between border-b border-black/10 pb-4">
-              <div>
-                <p className="font-mono text-[10px] uppercase tracking-widest text-[#0f62fe]">Sphere point detail</p>
-                <h2 className="mt-2 font-mono text-xl text-[#0b0b0b]">{selectedPoint.cve_id}</h2>
-                <p className="mt-1 text-xs text-[#71717a]">Reference number · ranked in direct-risk top 500</p>
-              </div>
-              <button type="button" onClick={() => onPointSelect(null)} className="text-[#71717a] hover:text-[#0b0b0b]"><X size={18} /></button>
-            </div>
-            <div className="mt-5 grid grid-cols-2 gap-3">
-              <Detail label="Risk category" value={selectedPoint.category} />
-              <Detail label="Risk score" value={Number(selectedPoint.risk_score).toFixed(4)} />
-              <Detail label="EPSS" value={Number(selectedPoint.epss).toFixed(4)} />
-              <Detail label="Published" value={selectedPoint.published || 'Unavailable'} />
-              <Detail label="Exploit signals" value={`${selectedPoint.exploit_signal_count}/4`} />
-              <Detail label="KEV status" value={selectedPoint.is_kev ? 'Confirmed' : 'Not listed'} />
-            </div>
-            <div className="mt-5 soc-panel p-4">
-              <p className="panel-subtitle">Signal sources</p>
-              <div className="mt-3 space-y-3">
-                {[
-                  ['ExploitDB', selectedPoint.exploitdb],
-                  ['Metasploit', selectedPoint.metasploit],
-                  ['Nuclei', selectedPoint.nuclei],
-                  ['GitHub PoC', selectedPoint.poc_github],
-                ].map(([label, value]) => (
-                  <div key={label} className="flex items-center justify-between border-b border-black/10 pb-2 text-sm last:border-0">
-                    <span className="text-[#71717a]">{label}</span>
-                    <span className={value > 0 ? 'text-[#f59e0b]' : 'text-[#71717a]'}>{value > 0 ? 'Detected' : 'None'}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <button type="button" onClick={() => { onPointSelect(null); onEnter(selectedPoint) }} className="soc-button mt-5 w-full justify-center">Open in operations queue</button>
           </section>
         </div>
       ) : null}
@@ -389,22 +229,344 @@ function LandingPage({ activeLens, onEnter, riskPoints, selectedCategory, onCate
   )
 }
 
-function buildLandingClusters() {
-  const clusters = buildClusters(42)
-  return clusters.map((cluster) => ({
-    ...cluster,
-    dashboard: {
-      ...cluster.dashboard,
-      clusterName: cluster.name,
+function Detail({ label, value }) {
+  return (
+    <div>
+      <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--meta)]">{label}</p>
+      <p className="mt-2 font-mono text-lg tabular-nums text-[var(--ink)]">{value}</p>
+    </div>
+  )
+}
+
+function EmptyState({ loading }) {
+  return (
+    <div className="grid min-h-32 place-items-center py-16 text-[11px] font-medium uppercase tracking-[0.22em] text-[var(--meta-soft)]">
+      {loading ? 'Loading queue…' : 'No matching vulnerabilities'}
+    </div>
+  )
+}
+
+function VulnerabilityQueue({
+  items,
+  total,
+  page,
+  setPage,
+  query,
+  setQuery,
+  severity,
+  setSeverity,
+  method,
+  setMethod,
+  kevOnly,
+  setKevOnly,
+  loading,
+  onInspect,
+}) {
+  const pageCount = Math.max(1, Math.ceil(total / 25))
+  const filterClass =
+    'border-0 border-b border-[var(--line-strong)] bg-transparent py-2 text-[12px] text-[var(--ink)] outline-none focus:border-[#171717]'
+
+  return (
+    <section style={{ fontFamily: 'var(--font-story), Montserrat, sans-serif' }}>
+      <header className="border-b border-[var(--line)] pb-10">
+        <p className="text-[11px] font-medium uppercase tracking-[0.28em] text-[var(--meta)]">
+          Ranked top 500
+        </p>
+        <h2 className="mt-4 max-w-[18ch] text-[clamp(1.85rem,3.5vw,2.75rem)] font-semibold leading-[1.15] tracking-[-0.03em] text-[var(--ink)]">
+          The working list behind the sonar.
+        </h2>
+        <p className="mt-4 max-w-2xl text-[1.1rem] leading-relaxed text-[var(--meta)]">
+          {total.toLocaleString()} records ordered by {method.replaceAll('_', ' ')}. Open a row to
+          inspect risk, EPSS, and exploit evidence for that CVE.
+        </p>
+      </header>
+
+      <div
+        className="flex flex-wrap items-end gap-x-8 gap-y-5 border-b border-[var(--line)] py-8"
+        aria-label="Queue filters"
+      >
+        <label className="min-w-[14rem] flex-1">
+          <span className="mb-2 block text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--meta)]">
+            Find CVE
+          </span>
+          <div className="flex items-center gap-2 border-b border-[var(--line-strong)] focus-within:border-[#171717]">
+            <Search size={14} className="shrink-0 text-[var(--meta-soft)]" />
+            <input
+              value={query}
+              onChange={(event) => {
+                setPage(1)
+                setQuery(event.target.value)
+              }}
+              placeholder="CVE-2024-…"
+              className="w-full bg-transparent py-2 font-mono text-[12px] text-[var(--ink)] outline-none placeholder:text-[var(--meta-soft)]"
+            />
+          </div>
+        </label>
+
+        <label>
+          <span className="mb-2 block text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--meta)]">
+            Severity
+          </span>
+          <select
+            aria-label="Filter by severity"
+            value={severity}
+            onChange={(event) => {
+              setPage(1)
+              setSeverity(event.target.value)
+            }}
+            className={filterClass}
+          >
+            <option value="">All</option>
+            <option value="critical">Critical</option>
+            <option value="high">High</option>
+            <option value="medium">Medium</option>
+            <option value="low">Low</option>
+          </select>
+        </label>
+
+        <label>
+          <span className="mb-2 block text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--meta)]">
+            Ranking
+          </span>
+          <select
+            aria-label="Ranking method"
+            value={method}
+            onChange={(event) => {
+              setPage(1)
+              setMethod(event.target.value)
+            }}
+            className={filterClass}
+          >
+            <option value="direct_risk">Granite direct risk</option>
+            <option value="exploit_then_epss">Exploit then EPSS</option>
+            <option value="epss">EPSS</option>
+            <option value="cvss3">CVSS 3</option>
+          </select>
+        </label>
+
+        <button
+          type="button"
+          onClick={() => {
+            setPage(1)
+            setKevOnly((value) => !value)
+          }}
+          className={`pb-2 text-[10px] font-bold uppercase tracking-[0.2em] transition ${
+            kevOnly ? 'text-[var(--ink)] underline underline-offset-4' : 'text-[var(--meta)] hover:text-[var(--ink)]'
+          }`}
+        >
+          {kevOnly ? 'KEV only · on' : 'KEV only'}
+        </button>
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[760px] text-left">
+          <thead>
+            <tr className="border-b border-[var(--line)] text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--meta)]">
+              {['Rank', 'CVE', 'Severity', 'EPSS', 'Signals', 'Risk', 'KEV', ''].map((heading) => (
+                <th key={heading || 'open'} className="px-0 py-4 pr-6 font-bold first:pl-0">
+                  {heading}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {items.map((item, index) => {
+              const level = item.severity_category || severityFor(item.risk_score)
+              const rank = (page - 1) * 25 + index + 1
+              return (
+                <tr key={item.cve_id} className="border-b border-[var(--line)] text-sm transition hover:bg-[var(--hover-row)]">
+                  <td className="py-4 pr-6 font-mono text-[12px] font-semibold tabular-nums text-[var(--ink)]">
+                    {rank}
+                  </td>
+                  <td className="py-4 pr-6">
+                    <button
+                      type="button"
+                      onClick={() => onInspect(item)}
+                      className="text-left font-mono text-[12px] text-[var(--ink)] underline-offset-2 transition hover:underline"
+                    >
+                      {item.cve_id}
+                    </button>
+                    <div className="mt-1 text-[10px] uppercase tracking-[0.14em] text-[var(--meta-soft)]">
+                      {item.published || 'Date unavailable'}
+                    </div>
+                  </td>
+                  <td className="py-4 pr-6 text-[12px] font-medium text-[var(--ink)]">{level}</td>
+                  <td className="py-4 pr-6 font-mono text-[12px] tabular-nums text-[var(--meta)]">
+                    {Number(item.epss).toFixed(4)}
+                  </td>
+                  <td className="py-4 pr-6 font-mono text-[12px] tabular-nums text-[var(--meta)]">
+                    {item.exploit_signal_count}/4
+                  </td>
+                  <td className="py-4 pr-6 font-mono text-[12px] font-semibold tabular-nums text-[var(--ink)]">
+                    {Number(item.risk_score).toFixed(4)}
+                  </td>
+                  <td className="py-4 pr-6 text-[11px] font-medium uppercase tracking-[0.14em] text-[var(--meta)]">
+                    {item.is_kev ? 'Yes' : '—'}
+                  </td>
+                  <td className="py-4 text-right">
+                    <button
+                      type="button"
+                      onClick={() => onInspect(item)}
+                      className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--ink)] underline-offset-4 transition hover:underline"
+                    >
+                      Open
+                    </button>
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+        {!items.length ? <EmptyState loading={loading} /> : null}
+      </div>
+
+      <div className="mt-6 flex items-center justify-between text-[10px] font-medium uppercase tracking-[0.2em] text-[var(--meta)]">
+        <span>
+          Page {page} / {pageCount}
+        </span>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            disabled={page === 1}
+            onClick={() => setPage((value) => value - 1)}
+            className="grid h-8 w-8 place-items-center border border-[var(--line-strong)] text-[var(--ink)] transition hover:border-[#171717] disabled:cursor-not-allowed disabled:opacity-30"
+            aria-label="Previous page"
+          >
+            <ChevronLeft size={14} />
+          </button>
+          <button
+            type="button"
+            disabled={page >= pageCount}
+            onClick={() => setPage((value) => value + 1)}
+            className="grid h-8 w-8 place-items-center border border-[var(--line-strong)] text-[var(--ink)] transition hover:border-[#171717] disabled:cursor-not-allowed disabled:opacity-30"
+            aria-label="Next page"
+          >
+            <ChevronRight size={14} />
+          </button>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+/**
+ * Overview as a short story: one idea per beat, big explanation, one figure.
+ * Sits flush on the operations canvas — no white panel.
+ */
+function OperationsStory({ riskSummary, onOpenQueue }) {
+  const steps = [
+    {
+      step: '01',
+      title: 'Start with the full scoreboard',
+      body: 'SonarScan indexes every record in the 2026 scoreboard before ranking begins. This is the full vulnerability set the model reads from.',
+      figure: riskSummary?.total?.toLocaleString() || '—',
+      figureLabel: 'vulnerabilities indexed',
     },
-  }))
+    {
+      step: '02',
+      title: 'Rank, then isolate Critical',
+      body: 'IBM Granite blends model probability with EPSS and exploit signals, then keeps only the top 5% of the ranked top-500 on the sonar.',
+      figure: riskSummary?.critical?.toLocaleString() || '—',
+      figureLabel: 'Critical findings on sonar',
+    },
+    {
+      step: '03',
+      title: 'Weigh live exploit pressure',
+      body: 'Public exploit evidence and the CISA KEV catalog sharpen which Critical items deserve attention first in the queue below.',
+      figure: riskSummary?.active_signals?.toLocaleString() || '—',
+      figureLabel: 'records with exploit signals',
+      aside: `${(riskSummary?.kev_catalog ?? riskSummary?.kev)?.toLocaleString() || '—'} in KEV catalog`,
+    },
+  ]
+
+  return (
+    <section
+      className="mx-auto max-w-5xl space-y-0 bg-transparent"
+      style={{ fontFamily: 'var(--font-story), Montserrat, sans-serif' }}
+    >
+      <header className="border-b border-[var(--line)] px-0 pb-10 pt-2">
+        <p className="text-[11px] font-medium uppercase tracking-[0.28em] text-[var(--meta)]">How the queue is built</p>
+        <h2 className="mt-4 max-w-[22ch] text-[clamp(1.85rem,3.5vw,2.75rem)] font-semibold leading-[1.15] tracking-[-0.03em] text-[var(--ink)]">
+          Three moves from the full scoreboard to Critical sonar.
+        </h2>
+      </header>
+
+      {steps.map((item, index) => (
+        <article
+          key={item.step}
+          className={`grid gap-6 py-14 md:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] md:items-center ${
+            index < steps.length - 1 ? 'border-b border-[var(--line)]' : ''
+          }`}
+        >
+          <div>
+            <p className="text-[11px] font-medium uppercase tracking-[0.24em] text-[var(--meta-soft)]">{item.step}</p>
+            <h3 className="mt-3 text-[clamp(1.35rem,2.4vw,1.85rem)] font-semibold leading-snug tracking-[-0.02em] text-[var(--ink)]">
+              {item.title}
+            </h3>
+            <p className="mt-4 max-w-xl text-[1.05rem] font-normal leading-relaxed text-[var(--meta)] md:text-[1.15rem]">
+              {item.body}
+            </p>
+          </div>
+          <div className="md:pl-6 md:text-right">
+            <p className="text-[clamp(4.5rem,12vw,7.5rem)] font-semibold tabular-nums leading-[0.9] tracking-[-0.05em] text-[var(--ink)]">
+              {item.figure}
+            </p>
+            <p className="mt-4 text-[11px] font-medium uppercase tracking-[0.22em] text-[var(--meta)]">{item.figureLabel}</p>
+            {item.step === '01' ? (
+              <button
+                type="button"
+                onClick={onOpenQueue}
+                className="mt-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--ink)] underline underline-offset-4 transition hover:opacity-55"
+              >
+                View vulnerability queue
+              </button>
+            ) : null}
+            {item.step === '02' ? (
+              <button
+                type="button"
+                onClick={() =>
+                  document.getElementById('critical-sonar')?.scrollIntoView({ behavior: 'smooth' })
+                }
+                className="mt-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--ink)] underline underline-offset-4 transition hover:opacity-55"
+              >
+                View sonar
+              </button>
+            ) : null}
+            {item.aside ? (
+              <p className="mt-2 text-[11px] font-medium uppercase tracking-[0.16em] text-[var(--meta-soft)]">{item.aside}</p>
+            ) : null}
+          </div>
+        </article>
+      ))}
+
+    </section>
+  )
+}
+
+function LandingPage({ activeLens, onEnter, riskPoints }) {
+  return (
+    <div id="top" className="relative overflow-x-hidden bg-[var(--paper)] text-[var(--ink)]">
+      <SiteNav />
+      <GraniteWallHero
+        riskPoints={riskPoints}
+        onEnterOperations={() =>
+          onEnter({
+            id: 'radar-enter',
+            name: 'Priority field',
+            method: 'direct_risk',
+            severity: '',
+            viewHint: 'Opened from the threat radar hero',
+          })
+        }
+      />
+      <SiemConsole activeLens={activeLens} />
+    </div>
+  )
 }
 
 function App() {
   const [activeLens, setActiveLens] = useState(null)
   const [riskPoints, setRiskPoints] = useState([])
-  const [selectedCategory, setSelectedCategory] = useState('all')
-  const [selectedPoint, setSelectedPoint] = useState(null)
   const enterLens = useCallback((cluster) => {
     setActiveLens(cluster)
     window.setTimeout(() => document.getElementById('operations')?.scrollIntoView({ behavior: 'smooth' }), 0)
@@ -429,7 +591,7 @@ function App() {
     }
   }, [])
 
-  return <LandingPage activeLens={activeLens} onEnter={enterLens} riskPoints={riskPoints} selectedCategory={selectedCategory} onCategoryChange={setSelectedCategory} selectedPoint={selectedPoint} onPointSelect={setSelectedPoint} />
+  return <LandingPage activeLens={activeLens} onEnter={enterLens} riskPoints={riskPoints} />
 }
 
 function buildRiskPoints(items) {

@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Github, Menu, X } from 'lucide-react'
+import { Github, Menu, Moon, Sun, X } from 'lucide-react'
 import { SITE_LINKS } from '../data/links'
+import { useTheme } from '../theme'
 
 function DevpostIcon({ className = '' }) {
   return (
@@ -15,6 +16,22 @@ const NAV_LINKS = [
   { key: 'github', label: 'GitHub', href: SITE_LINKS.github, Icon: Github },
   { key: 'devpost', label: 'Devpost', href: SITE_LINKS.devpost, Icon: DevpostIcon },
 ]
+
+function ThemeToggle({ className = '' }) {
+  const { isDark, toggleTheme } = useTheme()
+  return (
+    <button
+      type="button"
+      onClick={toggleTheme}
+      className={`inline-flex items-center gap-2 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--meta)] transition hover:text-[var(--ink)] ${className}`}
+      aria-label={isDark ? 'Switch to day mode' : 'Switch to night mode'}
+      title={isDark ? 'Day mode' : 'Night mode'}
+    >
+      {isDark ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
+      <span className="hidden sm:inline">{isDark ? 'Day' : 'Night'}</span>
+    </button>
+  )
+}
 
 export default function SiteNav({ className = '' }) {
   const [open, setOpen] = useState(false)
@@ -36,42 +53,52 @@ export default function SiteNav({ className = '' }) {
   return (
     <>
       <nav
-        className={`pointer-events-auto relative z-40 flex items-center justify-between gap-4 border-b border-black/10 bg-[#f9f9f9]/95 px-4 py-3 text-[#0b0b0b] backdrop-blur-md sm:px-6 md:px-10 ${className}`}
+        className={`pointer-events-auto relative z-40 flex items-center justify-between gap-4 border-b border-[var(--line)] bg-[var(--paper)]/90 px-4 py-3.5 text-[var(--ink)] backdrop-blur-md sm:px-6 md:px-10 ${className}`}
         aria-label="Primary"
       >
         <a
           href="#top"
-          className="select-text font-mono text-[11px] uppercase tracking-[0.32em] text-[#0b0b0b] transition hover:text-[#0f62fe]"
+          className="select-text bg-[var(--ink)] px-3 py-2 font-[family-name:var(--font-story)] text-[13px] font-bold uppercase tracking-[0.28em] text-[var(--paper)] transition hover:opacity-80 sm:px-3.5 sm:text-[15px] sm:tracking-[0.3em]"
         >
-          GraniteWall
+          SonarScan
         </a>
 
-        <ul className="hidden items-center gap-1 sm:flex">
-          {NAV_LINKS.map(({ key, label, href, Icon }) => (
-            <li key={key}>
-              <a
-                href={href}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-2 px-3 py-2 font-mono text-[10px] uppercase tracking-[0.2em] text-[#71717a] transition hover:text-[#0b0b0b]"
-              >
-                <Icon className="h-3.5 w-3.5" />
-                {label}
-              </a>
-            </li>
-          ))}
-        </ul>
+        <div className="hidden items-center gap-4 sm:flex">
+          <span className="inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.2em] text-[var(--meta)]">
+            <span className="h-1.5 w-1.5 rounded-full bg-[var(--accent-soft)]" aria-hidden />
+            Granite ready
+          </span>
+          <ThemeToggle />
+          <ul className="flex items-center gap-1">
+            {NAV_LINKS.map(({ key, label, href, Icon }) => (
+              <li key={key}>
+                <a
+                  href={href}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-2 px-3 py-2 font-[family-name:var(--font-sans)] text-[10px] uppercase tracking-[0.2em] text-[var(--meta)] transition hover:text-[var(--ink)]"
+                >
+                  <Icon className="h-3.5 w-3.5" />
+                  {label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
 
-        <button
-          type="button"
-          className="inline-flex h-10 w-10 items-center justify-center border border-black/10 text-[#3f3f46] transition hover:border-[#0f62fe]/60 hover:text-[#0b0b0b] sm:hidden"
-          aria-expanded={open}
-          aria-controls="site-menu"
-          aria-label={open ? 'Close menu' : 'Open menu'}
-          onClick={() => setOpen((v) => !v)}
-        >
-          {open ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
-        </button>
+        <div className="flex items-center gap-1 sm:hidden">
+          <ThemeToggle className="px-2" />
+          <button
+            type="button"
+            className="inline-flex h-10 w-10 items-center justify-center border border-[var(--line)] text-[var(--ink)] transition hover:opacity-70"
+            aria-expanded={open}
+            aria-controls="site-menu"
+            aria-label={open ? 'Close menu' : 'Open menu'}
+            onClick={() => setOpen((v) => !v)}
+          >
+            {open ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+          </button>
+        </div>
       </nav>
 
       <AnimatePresence>
@@ -91,18 +118,18 @@ export default function SiteNav({ className = '' }) {
               onClick={() => setOpen(false)}
             />
             <motion.aside
-              className="absolute right-0 top-0 flex h-full w-[min(100%,20rem)] flex-col border-l border-black/10 bg-white"
+              className="absolute right-0 top-0 flex h-full w-[min(100%,20rem)] flex-col border-l border-[var(--line)] bg-[var(--paper)]"
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', stiffness: 380, damping: 34 }}
             >
-              <div className="flex items-center justify-between border-b border-black/10 px-5 py-4">
+              <div className="flex items-center justify-between border-b border-[var(--line)] px-5 py-4">
                 <p className="eyebrow">Menu</p>
                 <button
                   type="button"
                   aria-label="Close menu"
-                  className="inline-flex h-9 w-9 items-center justify-center border border-black/10 text-[#3f3f46]"
+                  className="inline-flex h-9 w-9 items-center justify-center border border-[var(--line)] text-[var(--ink)]"
                   onClick={() => setOpen(false)}
                 >
                   <X className="h-4 w-4" />
@@ -116,7 +143,7 @@ export default function SiteNav({ className = '' }) {
                       href={href}
                       target="_blank"
                       rel="noreferrer"
-                      className="flex items-center gap-3 border border-transparent px-4 py-3.5 font-mono text-[11px] uppercase tracking-[0.2em] text-[#3f3f46] transition hover:border-black/10"
+                      className="flex items-center gap-3 border border-transparent px-4 py-3.5 font-mono text-[11px] uppercase tracking-[0.2em] text-[var(--meta)] transition hover:border-[var(--line)] hover:text-[var(--ink)]"
                       onClick={() => setOpen(false)}
                     >
                       <Icon className="h-4 w-4 shrink-0" />
@@ -126,7 +153,7 @@ export default function SiteNav({ className = '' }) {
                 ))}
               </ul>
 
-              <p className="mt-auto border-t border-black/10 px-5 py-4 eyebrow">
+              <p className="mt-auto border-t border-[var(--line)] px-5 py-4 eyebrow">
                 IBM Granite · Datathon
               </p>
             </motion.aside>
