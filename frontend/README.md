@@ -11,8 +11,11 @@ npm install
 npm run dev
 ```
 
-The app is available at <http://localhost:5173>. It expects the FastAPI
-backend at `http://127.0.0.1:8000` by default. To use another backend, create
+`npm run dev` starts **both** Vite and the FastAPI API (via `scripts/start-api.mjs`
+and the repo-root `.venv`). Web only: `npm run dev:web`. API only: `npm run dev:api`.
+
+The app is available at <http://127.0.0.1:5173>. The API is at
+`http://127.0.0.1:8000` by default. To use another backend, create
 `frontend/.env`:
 
 ```env

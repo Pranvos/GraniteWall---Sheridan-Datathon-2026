@@ -5,35 +5,17 @@ import { SITE_LINKS } from '../data/links'
 
 function DevpostIcon({ className = '' }) {
   return (
-    <svg
-      viewBox="0 0 24 24"
-      aria-hidden
-      className={className}
-      fill="currentColor"
-    >
+    <svg viewBox="0 0 24 24" aria-hidden className={className} fill="currentColor">
       <path d="M6.002 1.61 0 12.004l6.002 10.393h11.996L24 12.004 17.998 1.61zm1.593 4.084h3.751c3.73 0 6.172 2.078 6.172 6.312 0 4.234-2.442 6.31-6.172 6.31H7.595zm3.751 3.028v6.566h.413c1.86 0 2.892-.921 2.892-3.283 0-2.36-1.032-3.283-2.892-3.283z" />
     </svg>
   )
 }
 
 const NAV_LINKS = [
-  {
-    key: 'github',
-    label: 'GitHub',
-    href: SITE_LINKS.github,
-    Icon: Github,
-  },
-  {
-    key: 'devpost',
-    label: 'Devpost',
-    href: SITE_LINKS.devpost,
-    Icon: DevpostIcon,
-  },
+  { key: 'github', label: 'GitHub', href: SITE_LINKS.github, Icon: Github },
+  { key: 'devpost', label: 'Devpost', href: SITE_LINKS.devpost, Icon: DevpostIcon },
 ]
 
-/**
- * Top bar — inline links on desktop, hamburger drawer on small screens.
- */
 export default function SiteNav({ className = '' }) {
   const [open, setOpen] = useState(false)
 
@@ -54,18 +36,16 @@ export default function SiteNav({ className = '' }) {
   return (
     <>
       <nav
-        className={`pointer-events-auto relative z-40 flex items-center justify-between gap-4 border-b border-slate-800/80 bg-[#070b14]/90 px-4 py-3 text-slate-200 backdrop-blur-md sm:px-6 md:px-10 ${className}`}
+        className={`pointer-events-auto relative z-40 flex items-center justify-between gap-4 border-b border-black/10 bg-[#f9f9f9]/95 px-4 py-3 text-[#0b0b0b] backdrop-blur-md sm:px-6 md:px-10 ${className}`}
         aria-label="Primary"
       >
         <a
           href="#top"
-          data-cursor="hot"
-          className="select-text font-mono text-[10px] uppercase tracking-[0.28em] text-slate-400 transition hover:text-cyan-300"
+          className="select-text font-mono text-[11px] uppercase tracking-[0.32em] text-[#0b0b0b] transition hover:text-[#0f62fe]"
         >
           GraniteWall
         </a>
 
-        {/* Desktop links */}
         <ul className="hidden items-center gap-1 sm:flex">
           {NAV_LINKS.map(({ key, label, href, Icon }) => (
             <li key={key}>
@@ -73,8 +53,7 @@ export default function SiteNav({ className = '' }) {
                 href={href}
                 target="_blank"
                 rel="noreferrer"
-                data-cursor="hot"
-                className="inline-flex items-center gap-2 px-3 py-2 font-mono text-[10px] uppercase tracking-[0.22em] text-slate-400 transition hover:bg-cyan-400/10 hover:text-cyan-300"
+                className="inline-flex items-center gap-2 px-3 py-2 font-mono text-[10px] uppercase tracking-[0.2em] text-[#71717a] transition hover:text-[#0b0b0b]"
               >
                 <Icon className="h-3.5 w-3.5" />
                 {label}
@@ -83,11 +62,9 @@ export default function SiteNav({ className = '' }) {
           ))}
         </ul>
 
-        {/* Mobile menu toggle */}
         <button
           type="button"
-          data-cursor="hot"
-          className="inline-flex h-10 w-10 items-center justify-center border border-slate-700 text-slate-300 transition hover:border-cyan-400/60 hover:bg-cyan-400/10 hover:text-cyan-300 sm:hidden"
+          className="inline-flex h-10 w-10 items-center justify-center border border-black/10 text-[#3f3f46] transition hover:border-[#0f62fe]/60 hover:text-[#0b0b0b] sm:hidden"
           aria-expanded={open}
           aria-controls="site-menu"
           aria-label={open ? 'Close menu' : 'Open menu'}
@@ -110,25 +87,22 @@ export default function SiteNav({ className = '' }) {
             <button
               type="button"
               aria-label="Close menu"
-              className="absolute inset-0 bg-black/70"
+              className="absolute inset-0 bg-black/40"
               onClick={() => setOpen(false)}
             />
             <motion.aside
-              className="absolute right-0 top-0 flex h-full w-[min(100%,20rem)] flex-col border-l border-slate-800 bg-[#090e19] shadow-[-12px_0_40px_rgba(0,0,0,0.4)]"
+              className="absolute right-0 top-0 flex h-full w-[min(100%,20rem)] flex-col border-l border-black/10 bg-white"
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', stiffness: 380, damping: 34 }}
             >
-              <div className="flex items-center justify-between border-b border-slate-800 px-5 py-4">
-                <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-slate-500">
-                  Menu
-                </p>
+              <div className="flex items-center justify-between border-b border-black/10 px-5 py-4">
+                <p className="eyebrow">Menu</p>
                 <button
                   type="button"
-                  data-cursor="hot"
                   aria-label="Close menu"
-                  className="inline-flex h-9 w-9 items-center justify-center border border-slate-700 text-slate-300"
+                  className="inline-flex h-9 w-9 items-center justify-center border border-black/10 text-[#3f3f46]"
                   onClick={() => setOpen(false)}
                 >
                   <X className="h-4 w-4" />
@@ -142,8 +116,7 @@ export default function SiteNav({ className = '' }) {
                       href={href}
                       target="_blank"
                       rel="noreferrer"
-                      data-cursor="hot"
-                      className="flex items-center gap-3 border border-transparent px-4 py-3.5 font-mono text-[11px] uppercase tracking-[0.22em] text-slate-300 transition hover:border-slate-700 hover:bg-slate-800/50"
+                      className="flex items-center gap-3 border border-transparent px-4 py-3.5 font-mono text-[11px] uppercase tracking-[0.2em] text-[#3f3f46] transition hover:border-black/10"
                       onClick={() => setOpen(false)}
                     >
                       <Icon className="h-4 w-4 shrink-0" />
@@ -153,7 +126,7 @@ export default function SiteNav({ className = '' }) {
                 ))}
               </ul>
 
-              <p className="mt-auto border-t border-slate-800 px-5 py-4 font-mono text-[10px] uppercase tracking-[0.2em] text-slate-500">
+              <p className="mt-auto border-t border-black/10 px-5 py-4 eyebrow">
                 IBM Granite · Datathon
               </p>
             </motion.aside>
