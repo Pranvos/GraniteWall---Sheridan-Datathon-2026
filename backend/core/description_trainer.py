@@ -6,6 +6,7 @@ import argparse
 import json
 import re
 import time
+from collections import Counter
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
@@ -27,6 +28,7 @@ NVD_API_URL = "https://services.nvd.nist.gov/rest/json/cves/2.0"
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_DATA_PATH = REPO_ROOT / "data" / "cwe_vulnerabilities.csv"
 DEFAULT_MODEL_PATH = REPO_ROOT / "data" / "cwe_classifier.joblib"
+DEFAULT_CWE_NAMES_PATH = REPO_ROOT / "data" / "weakness_types.csv"
 PAGE_SIZE = 2000
 
 _CWE_PATTERN = re.compile(r"\bCWE-\d+\b", re.IGNORECASE)
@@ -36,6 +38,36 @@ _UNIX_PATH_PATTERN = re.compile(r"(?<!\w)/(?:[\w.@+-]+/)*[\w.@+-]+")
 _VERSION_PATTERN = re.compile(
 	r"\b[vV]?\d+(?:\.\d+){1,}(?:[-+][A-Za-z0-9.-]+)?\b"
 )
+CWE_NAMES = {
+	"CWE-20": "Improper Input Validation",
+	"CWE-22": "Path Traversal",
+	"CWE-78": "OS Command Injection",
+	"CWE-79": "Cross-Site Scripting (XSS)",
+	"CWE-89": "SQL Injection",
+	"CWE-94": "Code Injection",
+	"CWE-119": "Improper Restriction of Operations within a Memory Buffer",
+	"CWE-125": "Out-of-bounds Read",
+	"CWE-200": "Exposure of Sensitive Information",
+	"CWE-269": "Improper Privilege Management",
+	"CWE-276": "Incorrect Default Permissions",
+	"CWE-287": "Improper Authentication",
+	"CWE-295": "Improper Certificate Validation",
+	"CWE-306": "Missing Authentication for Critical Function",
+	"CWE-327": "Use of a Broken or Risky Cryptographic Algorithm",
+	"CWE-330": "Insufficiently Random Values",
+	"CWE-352": "Cross-Site Request Forgery (CSRF)",
+	"CWE-400": "Uncontrolled Resource Consumption",
+	"CWE-434": "Unrestricted Upload of Dangerous File Type",
+	"CWE-476": "NULL Pointer Dereference",
+	"CWE-502": "Deserialization of Untrusted Data",
+	"CWE-611": "Improper Restriction of XML External Entity Reference",
+	"CWE-601": "Open Redirect",
+	"CWE-787": "Out-of-bounds Write",
+	"CWE-798": "Use of Hard-coded Credentials",
+	"CWE-862": "Missing Authorization",
+	"CWE-863": "Incorrect Authorization",
+	"CWE-918": "Server-Side Request Forgery (SSRF)",
+}
 
 
 def clean_description(text: Any) -> str:
@@ -149,6 +181,57 @@ def _parse_cwe_labels(value: Any) -> list[str]:
 		for match in _CWE_PATTERN.findall(str(item))
 	}
 	return sorted(labels)
+
+
+def load_cwe_names(path: str | Path = DEFAULT_CWE_NAMES_PATH) -> dict[str, str]:
+	"""Load CWE names from the local catalog, falling back to common built-ins."""
+	names = CWE_NAMES.copy()
+	catalog_path = Path(path)
+	if catalog_path.exists():
+		catalog = pd.read_csv(catalog_path, usecols=["cwe_id", "name"], dtype=str)
+		for cwe_id, name in zip(catalog["cwe_id"], catalog["name"]):
+			if cwe_id and name and name.strip():
+				names[cwe_id.strip().upper()] = name.strip()
+	return names
+
+
+def cwe_display_name(cwe_id: str, names: dict[str, str] | None = None) -> str:
+	"""Return a readable name for a known CWE ID, retaining unknown IDs."""
+	normalized_id = cwe_id.strip().upper()
+	name = (names or load_cwe_names()).get(normalized_id)
+	return f"{normalized_id}: {name}" if name else f"{normalized_id}: Name not found in CWE catalog"
+
+
+def summarize_cwe_csv(data_path: str | Path = DEFAULT_DATA_PATH) -> pd.DataFrame:
+	"""Count CWE labels in a CSV and attach readable names for visualization."""
+	frame = pd.read_csv(data_path, low_memory=False)
+	labels_column = _find_column(frame, ("cwe_ids", "cwe", "weaknesses", "cwe_labels"))
+	if labels_column is None:
+		raise ValueError("CSV must include a CWE label column such as 'cwe_ids'")
+
+	counts: Counter[str] = Counter()
+	labeled_rows = 0
+	for value in frame[labels_column]:
+		labels = _parse_cwe_labels(value)
+		if labels:
+			labeled_rows += 1
+			counts.update(labels)
+
+	if not counts:
+		raise ValueError("CSV contains no recognized CWE IDs")
+
+	names = load_cwe_names()
+	return pd.DataFrame(
+		[
+			{
+				"cwe_id": cwe_id,
+				"name": cwe_display_name(cwe_id, names),
+				"cve_count": count,
+				"percent_of_labeled_rows": round(100 * count / labeled_rows, 2),
+			}
+			for cwe_id, count in counts.most_common()
+		]
+	)
 
 
 def _find_column(frame: pd.DataFrame, options: tuple[str, ...]) -> str | None:
@@ -354,13 +437,23 @@ def main() -> None:
 	train.add_argument("--data", type=Path, default=DEFAULT_DATA_PATH)
 	train.add_argument("--model", type=Path, default=DEFAULT_MODEL_PATH)
 	train.add_argument("--test-fraction", type=float, default=0.2)
+	summarize = commands.add_parser("summarize", help="Show CWE names and counts in a CSV")
+	summarize.add_argument("--data", type=Path, default=DEFAULT_DATA_PATH)
+	summarize.add_argument("--out", type=Path, help="Output CSV path (default: <input>_cwe_summary.csv)")
 	args = parser.parse_args()
 
 	if args.command == "collect":
 		frame = collect_nvd_cves(args.start, args.end, args.output, args.api_key)
 		print(f"Collected {len(frame)} CVEs to {args.output}")
-	else:
+	elif args.command == "train":
 		print(json.dumps(train_classifier(args.data, args.model, args.test_fraction), indent=2))
+	else:
+		report = summarize_cwe_csv(args.data)
+		output_path = args.out or args.data.with_name(f"{args.data.stem}_cwe_summary.csv")
+		output_path.parent.mkdir(parents=True, exist_ok=True)
+		report.to_csv(output_path, index=False)
+		print(report.to_string(index=False))
+		print(f"\nWrote summary to {output_path}")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,16 @@
+{
+  "sample_size": 1000,
+  "seed": 42,
+  "training_rows": 1500,
+  "training_kev_positives": 500,
+  "training_non_kev_negatives": 1000,
+  "sample_kev_matches": 7,
+  "sample_scoreboard_coverage": 196,
+  "top_500_kev_hits": 6,
+  "average_precision": 0.09146143276165357,
+  "roc_auc": 0.8486548698029062,
+  "ranked_csv": "C:\\Users\\tonyl\\Projects\\GitHub Repos\\Sleepe Repos\\Sheridan Datathon\\GraniteWall---Sheridan-Datathon-2026\\data\\samples\\sample_1000_model_ranked.csv",
+  "cwe_summary_csv": "C:\\Users\\tonyl\\Projects\\GitHub Repos\\Sleepe Repos\\Sheridan Datathon\\GraniteWall---Sheridan-Datathon-2026\\data\\samples\\sample_1000_model_cwe_summary.csv",
+  "chart_svg": "C:\\Users\\tonyl\\Projects\\GitHub Repos\\Sleepe Repos\\Sheridan Datathon\\GraniteWall---Sheridan-Datathon-2026\\data\\samples\\sample_1000_model_cwe_volume_vs_kev.svg",
+  "embedding_csv": "C:\\Users\\tonyl\\Projects\\GitHub Repos\\Sleepe Repos\\Sheridan Datathon\\GraniteWall---Sheridan-Datathon-2026\\data\\samples\\sample_1000_model_embeddings.csv"
+}
