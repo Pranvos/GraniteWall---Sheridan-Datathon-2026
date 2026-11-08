@@ -1,10 +1,12 @@
 import { Bar, BarChart, CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { Activity, Target, Users, Zap } from 'lucide-react'
 
-const chartTip = { background: '#0f172a', border: '1px solid #334155', fontSize: 12 }
-const colors = ['#22d3ee', '#a78bfa', '#f59e0b', '#34d399', '#fb7185']
+const chartTip = { background: '#ffffff', border: '1px solid rgba(11,11,11,0.12)', fontSize: 12, color: '#0b0b0b' }
+const colors = ['#0f62fe', '#ff334b', '#f59e0b', '#3b82f6', '#a1a1aa']
 const label = (method) => method.replaceAll('_', ' ')
 const percent = (value) => `${(Number(value) * 100).toFixed(2)}%`
+const tick = { fill: '#71717a', fontSize: 10 }
+const grid = '#e4e4e7'
 
 function Metric({ icon: Icon, title, value, detail, tone }) {
   return (
@@ -12,8 +14,8 @@ function Metric({ icon: Icon, title, value, detail, tone }) {
       <div className={`flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.16em] ${tone}`}>
         <Icon size={14} /> {title}
       </div>
-      <div className="mt-2 font-mono text-xl font-semibold text-slate-100">{value}</div>
-      <div className="mt-1 text-xs text-slate-500">{detail}</div>
+      <div className="mt-2 font-mono text-xl font-semibold text-[#0b0b0b]">{value}</div>
+      <div className="mt-1 text-xs text-[#71717a]">{detail}</div>
     </div>
   )
 }
@@ -50,7 +52,7 @@ export default function EvaluationInsights({ summary, results, loading, error })
 
   if (!summary.length && !results.length) {
     return (
-      <div className="soc-panel p-5 text-sm text-slate-500">
+      <div className="soc-panel p-5 text-sm text-[#71717a]">
         {loading ? 'Loading evaluation feed…' : error ? `Evaluation unavailable: ${error}` : 'No evaluation data available.'}
       </div>
     )
@@ -59,23 +61,23 @@ export default function EvaluationInsights({ summary, results, loading, error })
   return (
     <section className="space-y-5">
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <Metric icon={Target} title="Best precision@500" value={best ? percent(best.precision) : '—'} detail={best ? label(best.method) : 'No method'} tone="text-violet-400" />
-        <Metric icon={Activity} title="Total hits" value={totals.hits.toLocaleString()} detail="Across monthly evaluations" tone="text-cyan-400" />
-        <Metric icon={Users} title="Candidates" value={totals.candidates.toLocaleString()} detail="Monthly ranking pools" tone="text-amber-400" />
-        <Metric icon={Zap} title="Positives" value={totals.positives.toLocaleString()} detail="Future KEV additions" tone="text-emerald-400" />
+        <Metric icon={Target} title="Best precision@500" value={best ? percent(best.precision) : '—'} detail={best ? label(best.method) : 'No method'} tone="text-[#0f62fe]" />
+        <Metric icon={Activity} title="Total hits" value={totals.hits.toLocaleString()} detail="Across monthly evaluations" tone="text-[#0b0b0b]" />
+        <Metric icon={Users} title="Candidates" value={totals.candidates.toLocaleString()} detail="Monthly ranking pools" tone="text-[#f59e0b]" />
+        <Metric icon={Zap} title="Positives" value={totals.positives.toLocaleString()} detail="Future KEV additions" tone="text-[#ff334b]" />
       </div>
 
       <div className="grid gap-5 xl:grid-cols-2">
         <ChartPanel title="Method comparison" subtitle="Hits, precision@500, recall@500, candidates and positives">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={summary} layout="vertical" margin={{ left: 18, right: 18 }}>
-              <CartesianGrid stroke="#1e293b" horizontal={false} />
-              <XAxis type="number" tick={{ fill: '#64748b', fontSize: 10 }} />
-              <YAxis type="category" dataKey="method" width={105} tick={{ fill: '#94a3b8', fontSize: 10 }} tickFormatter={label} />
+              <CartesianGrid stroke={grid} horizontal={false} />
+              <XAxis type="number" tick={tick} />
+              <YAxis type="category" dataKey="method" width={105} tick={tick} tickFormatter={label} />
               <Tooltip contentStyle={chartTip} />
               <Legend wrapperStyle={{ fontSize: 10 }} />
-              <Bar dataKey="hits" fill="#22d3ee" name="Hits" />
-              <Bar dataKey="positives" fill="#34d399" name="Positives" />
+              <Bar dataKey="hits" fill="#0f62fe" name="Hits" />
+              <Bar dataKey="positives" fill="#ff334b" name="Positives" />
               <Bar dataKey="candidates" fill="#f59e0b" name="Candidates" />
             </BarChart>
           </ResponsiveContainer>
@@ -83,13 +85,13 @@ export default function EvaluationInsights({ summary, results, loading, error })
         <ChartPanel title="Precision and recall" subtitle="Ranking quality at the top 500">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={summary} margin={{ left: 4, right: 12 }}>
-              <CartesianGrid stroke="#1e293b" strokeDasharray="3 3" vertical={false} />
-              <XAxis dataKey="method" tick={{ fill: '#94a3b8', fontSize: 10 }} tickFormatter={label} />
-              <YAxis tick={{ fill: '#64748b', fontSize: 10 }} tickFormatter={(value) => `${(value * 100).toFixed(0)}%`} />
+              <CartesianGrid stroke={grid} strokeDasharray="3 3" vertical={false} />
+              <XAxis dataKey="method" tick={tick} tickFormatter={label} />
+              <YAxis tick={tick} tickFormatter={(value) => `${(value * 100).toFixed(0)}%`} />
               <Tooltip contentStyle={chartTip} formatter={(value) => percent(value)} />
               <Legend wrapperStyle={{ fontSize: 10 }} />
-              <Bar dataKey="precision" fill="#a78bfa" name="Precision@500" />
-              <Bar dataKey="recall" fill="#fb7185" name="Recall@500" />
+              <Bar dataKey="precision" fill="#0f62fe" name="Precision@500" />
+              <Bar dataKey="recall" fill="#ff334b" name="Recall@500" />
             </BarChart>
           </ResponsiveContainer>
         </ChartPanel>
@@ -99,9 +101,9 @@ export default function EvaluationInsights({ summary, results, loading, error })
         <ChartPanel title="Monthly hits" subtitle="Confirmed ranking hits by method">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={trendRows} margin={{ right: 16 }}>
-              <CartesianGrid stroke="#1e293b" strokeDasharray="3 3" vertical={false} />
-              <XAxis dataKey="month" tick={{ fill: '#64748b', fontSize: 10 }} />
-              <YAxis tick={{ fill: '#64748b', fontSize: 10 }} />
+              <CartesianGrid stroke={grid} strokeDasharray="3 3" vertical={false} />
+              <XAxis dataKey="month" tick={tick} />
+              <YAxis tick={tick} />
               <Tooltip contentStyle={chartTip} />
               <Legend wrapperStyle={{ fontSize: 10 }} />
               {methods.map((method, index) => <Line key={`${method}-hits`} type="monotone" dataKey={`${method}_hits`} stroke={colors[index % colors.length]} name={`${label(method)} hits`} strokeWidth={2} dot={false} />)}
@@ -111,9 +113,9 @@ export default function EvaluationInsights({ summary, results, loading, error })
         <ChartPanel title="Monthly quality" subtitle="Precision@500 and recall@500 by method">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={trendRows} margin={{ right: 16 }}>
-              <CartesianGrid stroke="#1e293b" strokeDasharray="3 3" vertical={false} />
-              <XAxis dataKey="month" tick={{ fill: '#64748b', fontSize: 10 }} />
-              <YAxis tick={{ fill: '#64748b', fontSize: 10 }} tickFormatter={(value) => `${(value * 100).toFixed(0)}%`} />
+              <CartesianGrid stroke={grid} strokeDasharray="3 3" vertical={false} />
+              <XAxis dataKey="month" tick={tick} />
+              <YAxis tick={tick} tickFormatter={(value) => `${(value * 100).toFixed(0)}%`} />
               <Tooltip contentStyle={chartTip} formatter={(value) => percent(value)} />
               <Legend wrapperStyle={{ fontSize: 10 }} />
               {methods.map((method, index) => <Line key={`${method}-precision`} type="monotone" dataKey={`${method}_precision`} stroke={colors[index % colors.length]} name={`${label(method)} precision`} strokeWidth={2} dot={false} />)}
@@ -124,9 +126,9 @@ export default function EvaluationInsights({ summary, results, loading, error })
         <ChartPanel title="Monthly volume" subtitle="Candidates and future positives by method">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={trendRows} margin={{ right: 16 }}>
-              <CartesianGrid stroke="#1e293b" strokeDasharray="3 3" vertical={false} />
-              <XAxis dataKey="month" tick={{ fill: '#64748b', fontSize: 10 }} />
-              <YAxis tick={{ fill: '#64748b', fontSize: 10 }} />
+              <CartesianGrid stroke={grid} strokeDasharray="3 3" vertical={false} />
+              <XAxis dataKey="month" tick={tick} />
+              <YAxis tick={tick} />
               <Tooltip contentStyle={chartTip} />
               <Legend wrapperStyle={{ fontSize: 10 }} />
               {methods.map((method, index) => <Line key={`${method}-candidates`} type="monotone" dataKey={`${method}_candidates`} stroke={colors[index % colors.length]} name={`${label(method)} candidates`} strokeWidth={2} dot={false} />)}
@@ -138,10 +140,10 @@ export default function EvaluationInsights({ summary, results, loading, error })
 
       <div className="overflow-x-auto soc-panel">
         <table className="w-full min-w-[760px] text-left text-xs">
-          <thead className="border-b border-slate-800 font-mono text-[10px] uppercase tracking-wider text-slate-500">
+          <thead className="border-b border-black/10 font-mono text-[10px] uppercase tracking-wider text-[#71717a]">
             <tr>{['Month', 'Method', 'Hits', 'Precision@500', 'Recall@500', 'Candidates', 'Positives'].map((heading) => <th key={heading} className="px-4 py-3">{heading}</th>)}</tr>
           </thead>
-          <tbody>{monthly.map((row) => <tr key={`${row.month}-${row.method}`} className="border-b border-slate-800/70 text-slate-300">
+          <tbody>{monthly.map((row) => <tr key={`${row.month}-${row.method}`} className="border-b border-black/10/70 text-[#3f3f46]">
             <td className="px-4 py-3 font-mono">{row.month}</td><td className="px-4 py-3">{label(row.method)}</td><td className="px-4 py-3 font-mono">{row.hits}</td><td className="px-4 py-3 font-mono">{percent(row.precision)}</td><td className="px-4 py-3 font-mono">{percent(row.recall)}</td><td className="px-4 py-3 font-mono">{row.candidates}</td><td className="px-4 py-3 font-mono">{row.positives}</td>
           </tr>)}</tbody>
         </table>

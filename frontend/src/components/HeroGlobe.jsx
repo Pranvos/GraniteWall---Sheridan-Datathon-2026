@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { Html } from '@react-three/drei'
 import * as THREE from 'three'
@@ -6,12 +6,13 @@ import * as THREE from 'three'
 const GLOBE_R = 1.55
 const FACE_DOT = 0.1
 const SPIN_SPEED = 0.07
-/** Min chord on the unit sphere between seats (~55°). */
+/** Min chord on the unit sphere between seats (~55°). Used when few markers. */
 const MIN_SEAT_DIST = 0.95
 const REST_SCALE = 0.86
 const REST_SCALE_MOBILE = 0.58
-/** Brief lock after teleport so a fresh seat can't instantly re-hide. */
-const RESPAWN_GRACE_MS = 420
+/** Uniform marker size — never scale individual CVE dots differently. */
+const DOT_R = 0.02
+const GLOW_SCALE = 2.15
 
 const vertexShader = /* glsl */ `
 uniform float uTime;
@@ -37,8 +38,9 @@ const fragmentShader = /* glsl */ `
 varying float vWave;
 
 void main() {
-  float shade = 0.22 + smoothstep(0.0, 0.14, abs(vWave)) * 0.18;
-  gl_FragColor = vec4(vec3(shade), 0.42);
+  // Ink wire on paper — dark stroke, not a night-void fill
+  float shade = 0.08 + smoothstep(0.0, 0.14, abs(vWave)) * 0.16;
+  gl_FragColor = vec4(vec3(shade), 0.72);
 }
 `
 
@@ -82,12 +84,38 @@ function isVertexFarFrom(verts, index, occupied) {
   return occupied.every((j) => unitChord(v, verts[j]) >= MIN_SEAT_DIST)
 }
 
-/** Preferred front directions, snapped to mesh intersections. */
+/**
+ * Tetrahedral seats — at least one hub stays camera-facing at every spin angle,
+ * so the wall never goes fully empty.
+ */
 const SEED_DIRS = [
-  new THREE.Vector3(-0.72, 0.48, 0.5).setLength(GLOBE_R),
-  new THREE.Vector3(0.05, -0.55, 0.83).setLength(GLOBE_R),
-  new THREE.Vector3(0.7, 0.35, 0.62).setLength(GLOBE_R),
+  new THREE.Vector3(1, 1, 1).normalize().multiplyScalar(GLOBE_R),
+  new THREE.Vector3(1, -1, -1).normalize().multiplyScalar(GLOBE_R),
+  new THREE.Vector3(-1, 1, -1).normalize().multiplyScalar(GLOBE_R),
+  new THREE.Vector3(-1, -1, 1).normalize().multiplyScalar(GLOBE_R),
 ]
+
+function nearestMeshVertexIndex(verts, position, occupied = []) {
+  const occupiedSet = new Set(occupied)
+  const target = new THREE.Vector3(position[0], position[1], position[2])
+  let best = -1
+  let bestDistance = Infinity
+  let fallback = 0
+  let fallbackDistance = Infinity
+  for (let index = 0; index < verts.length; index++) {
+    const distance = verts[index].distanceToSquared(target)
+    if (distance < fallbackDistance) {
+      fallback = index
+      fallbackDistance = distance
+    }
+    if (occupiedSet.has(index)) continue
+    if (distance < bestDistance) {
+      best = index
+      bestDistance = distance
+    }
+  }
+  return best >= 0 ? best : fallback
+}
 
 function pickInitialVertexIndices(verts, count) {
   const picked = []
@@ -98,72 +126,29 @@ function pickInitialVertexIndices(verts, count) {
       .sort((a, b) => a.d - b.d)
     let chosen = ranked[0]?.idx ?? 0
     for (const { idx } of ranked) {
-      if (isVertexFarFrom(verts, idx, picked)) {
-        chosen = idx
-        break
-      }
-
-      function nearestMeshVertexIndex(verts, position) {
-        const target = new THREE.Vector3(position[0], position[1], position[2])
-        let best = 0
-        let bestDistance = Infinity
-        verts.forEach((vertex, index) => {
-          const distance = vertex.distanceToSquared(target)
-          if (distance < bestDistance) {
-            best = index
-            bestDistance = distance
-          }
-        })
-        return best
-      }
+      if (picked.includes(idx)) continue
+      if (picked.length < 8 && !isVertexFarFrom(verts, idx, picked)) continue
+      chosen = idx
+      break
     }
     picked.push(chosen)
   }
   return picked
 }
 
-/**
- * Reappear on the opposite side of where the node vanished.
- * exitSide 'right' → enter from left (−X); 'left' → enter from right (+X).
- */
-function pickEntryVertex(group, verts, occupied = [], exitSide = 'right') {
-  const occupiedSet = new Set(occupied)
-  const world = new THREE.Vector3()
-  const enterLeft = exitSide === 'right'
-
-  const preferred = []
-  const front = []
-
-  for (let i = 0; i < verts.length; i++) {
-    if (occupiedSet.has(i)) continue
-    world.copy(verts[i]).applyQuaternion(group.quaternion)
-    // Must be clearly camera-facing so it won't instantly hide again
-    if (world.z < 0.35) continue
-    if (!isVertexFarFrom(verts, i, occupied)) continue
-    const onEntrySide = enterLeft ? world.x < -0.2 : world.x > 0.2
-    if (onEntrySide) preferred.push(i)
-    else front.push(i)
-  }
-
-  const pool = preferred.length ? preferred : front
-  if (pool.length) return pool[Math.floor(Math.random() * pool.length)]
-
-  // Guaranteed farthest front vertex
-  let best = 0
-  let bestScore = -1
-  for (let i = 0; i < verts.length; i++) {
-    if (occupiedSet.has(i)) continue
-    world.copy(verts[i]).applyQuaternion(group.quaternion)
-    if (world.z < 0.2) continue
-    const score = occupied.length
-      ? Math.min(...occupied.map((j) => unitChord(verts[i], verts[j])))
-      : 2
-    if (score > bestScore) {
-      bestScore = score
-      best = i
-    }
-  }
-  return best
+/** Assign each cluster a unique mesh vertex (prefer basePosition when present). */
+function assignClusterPlacements(verts, clusters) {
+  const occupied = []
+  const placements = {}
+  const seeded = pickInitialVertexIndices(verts, clusters.length)
+  clusters.forEach((cluster, i) => {
+    const idx = cluster.basePosition
+      ? nearestMeshVertexIndex(verts, cluster.basePosition, occupied)
+      : seeded[i] ?? nearestMeshVertexIndex(verts, SEED_DIRS[i % SEED_DIRS.length].toArray(), occupied)
+    occupied.push(idx)
+    placements[cluster.id] = idx
+  })
+  return placements
 }
 
 function ClusterMarker({
@@ -173,13 +158,14 @@ function ClusterMarker({
   interactive,
   dragRef,
   onSelect,
-  onWentBehind,
+  filterActive = true,
 }) {
   const groupRef = useRef(null)
   const mesh = useRef(null)
-  const [facing, setFacing] = useState(true)
-  const wasFacing = useRef(true)
-  const graceUntil = useRef(0)
+  const facingRef = useRef(true)
+  const persist = Boolean(cluster.persistVisible)
+  const dotR = cluster.dotRadius ?? DOT_R
+  const [labelFacing, setLabelFacing] = useState(Boolean(cluster.showLabel))
   const { camera, gl } = useThree()
   const worldPos = useMemo(() => new THREE.Vector3(), [])
   const toCam = useMemo(() => new THREE.Vector3(), [])
@@ -188,15 +174,8 @@ function ClusterMarker({
     () => new THREE.Vector3(basePosition[0], basePosition[1], basePosition[2]),
     [basePosition[0], basePosition[1], basePosition[2]],
   )
-  const posKey = `${basePosition[0]},${basePosition[1]},${basePosition[2]}`
 
-  useEffect(() => {
-    wasFacing.current = true
-    setFacing(true)
-    graceUntil.current = performance.now() + RESPAWN_GRACE_MS
-  }, [posKey])
-
-  useFrame((state) => {
+  useFrame((state, delta) => {
     if (!groupRef.current) return
 
     const d = distortRef.current
@@ -214,35 +193,27 @@ function ClusterMarker({
     const outward = worldPos.clone().normalize()
     const front = outward.dot(toCam) > FACE_DOT
 
-    // Grace window after teleport — stay visible, don't re-trigger hide
-    if (performance.now() < graceUntil.current) {
-      wasFacing.current = true
-      if (!facing) setFacing(true)
-      return
-    }
+    // Filter hides non-selected hubs; persist hubs still dim on the far side
+    facingRef.current = front
+    groupRef.current.visible = filterActive && (persist || front)
+    const showLabel = Boolean(cluster.showLabel) && filterActive && front
+    if (cluster.showLabel && labelFacing !== showLabel) setLabelFacing(showLabel)
 
-    if (wasFacing.current && !front) {
-      const teleported = onWentBehind?.(cluster.id, worldPos.x >= 0 ? 'right' : 'left')
-      if (teleported) {
-        // Seat jumps this frame — keep visible; don't wait on a hide/show cycle
-        wasFacing.current = true
-        if (!facing) setFacing(true)
-        return
-      }
-    }
-    wasFacing.current = front
-    setFacing((prev) => (prev === front ? prev : front))
+    const targetScale = front ? 1 : persist ? 0.72 : 1
+    const s = THREE.MathUtils.damp(groupRef.current.scale.x || 1, targetScale, 8, delta)
+    groupRef.current.scale.setScalar(s)
   })
 
   return (
-    <group ref={groupRef} position={basePosition} visible={facing}>
+    <group ref={groupRef} position={basePosition}>
       <mesh
         ref={mesh}
         onPointerDown={(e) => e.stopPropagation()}
         onClick={(e) => {
-          if (!interactive || !facing) return
+          if (!interactive || (!facingRef.current && !persist)) return
           e.stopPropagation()
           if (dragRef.current?.moved) return
+          if (!facingRef.current) return
           groupRef.current.getWorldPosition(worldPos)
           const rect = gl.domElement.getBoundingClientRect()
           const projected = worldPos.clone().project(camera)
@@ -258,47 +229,43 @@ function ClusterMarker({
           })
         }}
       >
-        <sphereGeometry args={[cluster.pointSize || 0.018, 8, 8]} />
-        <meshBasicMaterial color={cluster.color} toneMapped={false} depthTest={false} />
+        <sphereGeometry args={[dotR, 12, 12]} />
+        <meshBasicMaterial color={cluster.color} toneMapped={false} depthTest={false} transparent opacity={0.95} />
       </mesh>
-      <mesh scale={cluster.pointSize ? 3 : 2}>
-        <sphereGeometry args={[cluster.pointSize || 0.018, 8, 8]} />
+      <mesh scale={GLOW_SCALE}>
+        <sphereGeometry args={[dotR, 12, 12]} />
         <meshBasicMaterial
           color={cluster.color}
           transparent
-          opacity={0.22}
+          opacity={0.2}
           depthWrite={false}
           depthTest={false}
         />
       </mesh>
-      {facing && cluster.showLabel ? (
+      {cluster.showLabel && labelFacing ? (
         <Html
           center
           transform={false}
           style={{ pointerEvents: 'none', userSelect: 'none' }}
-          zIndexRange={[40, 10]}
+          zIndexRange={[100, 80]}
           occlude={false}
         >
           <div
-            data-cursor="hot"
-            className="pointer-events-none whitespace-nowrap text-center"
+            className="pointer-events-none whitespace-nowrap border border-black/10 bg-[#f9f9f9]/95 px-3 py-2 text-center backdrop-blur-sm"
             style={{
-              transform: 'translateY(-34px)',
+              transform: 'translateY(-52px)',
               WebkitFontSmoothing: 'antialiased',
               MozOsxFontSmoothing: 'grayscale',
             }}
           >
-            <p className="text-[9px] font-medium uppercase leading-none tracking-[0.06em] text-slate-200">
+            <p className="font-mono text-[9px] font-medium uppercase leading-none tracking-[0.14em] text-[#0b0b0b]">
               {cluster.name}
             </p>
-            <p className="mt-1 text-[13px] leading-none" aria-hidden="true">
-              {cluster.icon}
-            </p>
-            <p className="mt-1 max-w-[10rem] text-[8px] leading-tight tracking-[0.02em] text-slate-400">
+            <p className="mt-1.5 max-w-[11rem] text-[8px] leading-snug tracking-[0.02em] text-[#71717a]">
               {cluster.description}
             </p>
             {cluster.count != null ? (
-              <p className="mt-1 font-mono text-[8px] uppercase tracking-[0.08em] text-slate-500">
+              <p className="mt-1.5 font-mono text-[8px] uppercase tracking-[0.1em] text-[#71717a]">
                 {cluster.count} of top 500
               </p>
             ) : null}
@@ -309,7 +276,16 @@ function ClusterMarker({
   )
 }
 
-function GlobeMesh({ reducedMotion, clusters, interactive, onSelect }) {
+function PaperClear() {
+  const { gl } = useThree()
+  useEffect(() => {
+    gl.setClearColor(0xf9f9f9, 1)
+    gl.setClearAlpha(1)
+  }, [gl])
+  return null
+}
+
+function GlobeMesh({ reducedMotion, clusters, interactive, onSelect, selectedCategory = 'all' }) {
   const group = useRef(null)
   const { size, gl } = useThree()
   const isMobile = size.width < 768
@@ -324,8 +300,6 @@ function GlobeMesh({ reducedMotion, clusters, interactive, onSelect }) {
   })
   const rot = useRef({ x: -0.06, y: 0 })
   const distortRef = useRef({ time: 0, pointer: { x: 0, y: 0 }, distort: 0 })
-  const exitSideRef = useRef({})
-
   const geometry = useMemo(() => new THREE.IcosahedronGeometry(GLOBE_R, 5), [])
   const meshVerts = useMemo(() => extractMeshVertices(geometry), [geometry])
   const material = useMemo(
@@ -347,42 +321,12 @@ function GlobeMesh({ reducedMotion, clusters, interactive, onSelect }) {
   )
   const pointerTarget = useMemo(() => new THREE.Vector2(0, 0), [])
 
-  // Vertex indices into meshVerts — always exact wireframe intersections
-  const [placements, setPlacements] = useState(() => {
-    const indices = pickInitialVertexIndices(meshVerts, clusters.length)
-    return Object.fromEntries(
-      clusters.map((c, i) => [
-        c.id,
-        c.basePosition ? nearestMeshVertexIndex(meshVerts, c.basePosition) : (indices[i] ?? 0),
-      ]),
-    )
-  })
-  const placementsRef = useRef(placements)
-  placementsRef.current = placements
-
-  const pendingRespawn = useRef(new Set())
-
-  // Instant teleport — no queue/delays so fast drags don't leave dots missing
-  const onWentBehind = useCallback(
-    (id, exitSide = 'right') => {
-      if (!group.current || pendingRespawn.current.has(id)) return false
-      pendingRespawn.current.add(id)
-      exitSideRef.current[id] = exitSide
-
-      const occupied = Object.entries(placementsRef.current)
-        .filter(([key]) => key !== id)
-        .map(([, idx]) => idx)
-      const nextIdx = pickEntryVertex(group.current, meshVerts, occupied, exitSide)
-      const next = { ...placementsRef.current, [id]: nextIdx }
-      placementsRef.current = next
-      setPlacements(next)
-
-      window.setTimeout(() => {
-        pendingRespawn.current.delete(id)
-      }, RESPAWN_GRACE_MS)
-      return true
-    },
-    [meshVerts],
+  // Sync seats on first paint — avoid one frame of every marker at vertex 0 (the pole)
+  const clusterIds = clusters.map((c) => c.id).join('|')
+  const placements = useMemo(
+    () => assignClusterPlacements(meshVerts, clusters),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- stable seats keyed by id set only
+    [clusterIds, meshVerts],
   )
 
   useFrame((state, delta) => {
@@ -497,17 +441,21 @@ function GlobeMesh({ reducedMotion, clusters, interactive, onSelect }) {
       />
       <points geometry={geometry} scale={1.012}>
         <pointsMaterial
-          color="#1a1a1a"
-          size={0.007}
+          color="#18181b"
+          size={0.008}
           sizeAttenuation
           transparent
-          opacity={0.35}
+          opacity={0.4}
           depthWrite={false}
         />
       </points>
       {clusters.map((cluster) => {
-        const idx = placements[cluster.id] ?? 0
+        const idx = placements[cluster.id]
+        if (idx == null) return null
         const v = meshVerts[idx] || meshVerts[0]
+        const severity = String(cluster.severity || cluster.category || '').toLowerCase()
+        const filterActive =
+          selectedCategory === 'all' || severity === selectedCategory
         return (
           <ClusterMarker
             key={cluster.id}
@@ -517,7 +465,7 @@ function GlobeMesh({ reducedMotion, clusters, interactive, onSelect }) {
             interactive={interactive}
             dragRef={drag}
             onSelect={onSelect}
-            onWentBehind={onWentBehind}
+            filterActive={filterActive}
           />
         )
       })}
@@ -526,16 +474,17 @@ function GlobeMesh({ reducedMotion, clusters, interactive, onSelect }) {
 }
 
 /**
- * Wire globe — clusters live on mesh vertices and respawn from the opposite exit side.
+ * Wire globe — clusters sit on fixed mesh vertices; filter/spin only toggles visibility.
  */
 export default function HeroGlobe({
   className = '',
   clusters = [],
   interactive = true,
   onSelect,
+  selectedCategory = 'all',
 }) {
   const wrap = useRef(null)
-  const [visible, setVisible] = useState(true)
+  const [inView, setInView] = useState(true)
   const reducedMotion =
     typeof window !== 'undefined' &&
     window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -543,31 +492,38 @@ export default function HeroGlobe({
   useEffect(() => {
     const el = wrap.current
     if (!el) return undefined
-    const io = new IntersectionObserver(([entry]) => setVisible(entry.isIntersecting), {
-      threshold: 0.05,
+    // Pause the render loop off-screen, but never unmount WebGL — remounting on
+    // scroll-up was crashing the page.
+    const io = new IntersectionObserver(([entry]) => setInView(entry.isIntersecting), {
+      threshold: 0,
+      rootMargin: '200px',
     })
     io.observe(el)
     return () => io.disconnect()
   }, [])
 
   return (
-    <div ref={wrap} className={`absolute inset-0 h-full w-full ${className}`}>
+    <div ref={wrap} className={`absolute inset-0 h-full w-full bg-[#f9f9f9] ${className}`}>
       <Canvas
+        key="paper-globe"
         dpr={[1, 1.25]}
         camera={{ fov: 42, near: 0.1, far: 100, position: [0, 0, 4.8] }}
-        gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
-        frameloop={visible ? 'always' : 'never'}
-        style={{ width: '100%', height: '100%' }}
-        onCreated={({ gl }) => gl.setClearColor(0x070b14, 1)}
+        gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }}
+        frameloop={inView ? 'always' : 'never'}
+        style={{ width: '100%', height: '100%', background: '#f9f9f9' }}
+        onCreated={({ gl }) => {
+          gl.setClearColor(0xf9f9f9, 1)
+          gl.setClearAlpha(1)
+        }}
       >
-        {visible ? (
-          <GlobeMesh
-            reducedMotion={reducedMotion}
-            clusters={clusters}
-            interactive={interactive}
-            onSelect={onSelect}
-          />
-        ) : null}
+        <PaperClear />
+        <GlobeMesh
+          reducedMotion={reducedMotion}
+          clusters={clusters}
+          interactive={interactive}
+          onSelect={onSelect}
+          selectedCategory={selectedCategory}
+        />
       </Canvas>
     </div>
   )

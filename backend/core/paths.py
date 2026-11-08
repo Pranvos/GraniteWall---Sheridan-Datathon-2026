@@ -12,6 +12,10 @@ _CANDIDATES = (
 
 
 def get_data_dir() -> Path:
+    # Prefer a candidate that actually has the scoreboard (IBM dump or symlinked data/).
+    for path in _CANDIDATES:
+        if (path / "scoreboard_2026.csv").exists():
+            return path
     for path in _CANDIDATES:
         if path.is_dir():
             return path

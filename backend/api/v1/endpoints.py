@@ -5,13 +5,15 @@ from typing import Any
 import pandas as pd
 from fastapi import APIRouter, HTTPException, Query
 
+from core.paths import get_data_dir
+
 
 router = APIRouter()
 REPO_ROOT = Path(__file__).resolve().parents[3]
 EVAL_OUTPUT_DIR = REPO_ROOT / "backend" / "eval" / "output"
 RESULTS_PATH = EVAL_OUTPUT_DIR / "backtest_results.csv"
 SUMMARY_PATH = EVAL_OUTPUT_DIR / "backtest_results_summary.csv"
-DATA_DIR = REPO_ROOT / "data"
+DATA_DIR = get_data_dir()
 SCOREBOARD_PATH = DATA_DIR / "scoreboard_2026.csv"
 SCORED_SCOREBOARD_PATH = DATA_DIR / "scoreboard_2026_scored.csv"
 VULNERABILITIES_PATH = DATA_DIR / "vulnerabilities.csv"
@@ -213,12 +215,23 @@ def get_api_health() -> dict:
 @router.get("/risk/summary")
 def get_risk_summary() -> dict:
     frame = _load_scoreboard()
+    # Align Critical/High/Medium/Low with the wall: percentile bands inside ranked top 500
+    ranked = frame.sort_values("risk_score", ascending=False).head(500).copy()
+    ranked["severity_category"] = _percentile_categories(ranked, "risk_score")
+    counts = ranked["severity_category"].value_counts()
+    kev_catalog = 0
+    if KEV_PATH.exists():
+        kev_catalog = int(pd.read_csv(KEV_PATH, usecols=["cve_id"])["cve_id"].nunique())
     return {
         "total": int(len(frame)),
-        "kev": int(frame["is_kev"].sum()),
-        "critical": int((frame["risk_score"] >= 0.75).sum()),
-        "high": int(((frame["risk_score"] >= 0.5) & (frame["risk_score"] < 0.75)).sum()),
-        "average_epss": round(float(frame["epss"].mean()), 6),
+        "top_k": int(len(ranked)),
+        "kev": int(ranked["is_kev"].sum()),
+        "kev_catalog": kev_catalog,
+        "critical": int(counts.get("Critical", 0)),
+        "high": int(counts.get("High", 0)),
+        "medium": int(counts.get("Medium", 0)),
+        "low": int(counts.get("Low", 0)),
+        "average_epss": round(float(ranked["epss"].mean()), 6) if len(ranked) else 0.0,
         "active_signals": int((frame["exploit_signal_count"] > 0).sum()),
         "signal_breakdown": {
             column: int((frame[column] > 0).sum()) for column in SIGNAL_COLUMNS

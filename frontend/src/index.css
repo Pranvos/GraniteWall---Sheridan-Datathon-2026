@@ -2,24 +2,71 @@
 @tailwind components;
 @tailwind utilities;
 
-@keyframes wall-drift {
-  0%, 100% { transform: rotateX(1deg) rotateY(-2deg) translate3d(0, 0, 0); }
-  35% { transform: rotateX(1.5deg) rotateY(-1deg) translate3d(1px, -2px, 8px); }
-  68% { transform: rotateX(0.5deg) rotateY(-2.5deg) translate3d(-2px, 1px, 3px); }
+:root {
+  color-scheme: light;
+  --paper: #f9f9f9;
+  --paper-elevated: #ffffff;
+  --ink: #0b0b0b;
+  --meta: #71717a;
+  --line: rgba(11, 11, 11, 0.12);
+  --crimson: #ff334b;
+  --amber: #f59e0b;
+  --cobalt: #0f62fe;
+  --cobalt-soft: #3b82f6;
+  font-family: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
 }
 
-:root { color-scheme: dark; font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-synthesis: none; text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased; }
 * { box-sizing: border-box; }
-html, body, #root { margin: 0; min-height: 100%; background: #070b14; }
+html, body, #root {
+  margin: 0;
+  min-height: 100%;
+  background: var(--paper);
+  color: var(--ink);
+}
 body { min-width: 320px; }
 button, input, select { font: inherit; }
-@layer components {
-  .soc-panel { @apply rounded border border-slate-800/90 bg-[#0d1524]/80 shadow-[0_12px_40px_rgba(0,0,0,0.16)]; }
-  .soc-button { @apply inline-flex items-center gap-2 rounded border border-slate-700 bg-slate-900 px-3 py-2 font-mono text-[10px] uppercase tracking-wider text-slate-300 transition hover:border-cyan-400/60 hover:text-cyan-300 disabled:cursor-not-allowed disabled:opacity-40; }
-  .soc-icon-button { @apply grid h-7 w-7 place-items-center rounded border border-slate-700 text-slate-400 transition hover:border-cyan-400/60 hover:text-cyan-300 disabled:cursor-not-allowed disabled:opacity-30; }
-  .soc-select { @apply rounded border border-slate-700 bg-slate-900 px-3 py-2 font-mono text-[10px] uppercase tracking-wider text-slate-300 outline-none; }
-  .soc-alert { @apply flex items-center gap-2 rounded border border-red-500/30 bg-red-500/10 px-4 py-3 text-xs text-red-300; }
-  .panel-title { @apply font-semibold text-slate-100; }
-  .panel-subtitle { @apply font-mono text-[10px] uppercase tracking-[0.16em] text-slate-500; }
+
+.font-mono,
+.panel-subtitle,
+.soc-button,
+.soc-select {
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
 }
-* { scrollbar-width: thin; scrollbar-color: #334155 #0b1220; }
+
+@layer components {
+  .soc-panel {
+    @apply border border-black/10 bg-white;
+  }
+  .soc-button {
+    @apply inline-flex items-center gap-2 border border-black/15 bg-white px-3 py-2 font-mono text-[10px] uppercase tracking-[0.16em] text-[#0b0b0b] transition hover:border-[#0f62fe] hover:text-[#0f62fe] disabled:cursor-not-allowed disabled:opacity-40;
+  }
+  .soc-icon-button {
+    @apply grid h-7 w-7 place-items-center border border-black/15 text-[#71717a] transition hover:border-[#0f62fe] hover:text-[#0f62fe] disabled:cursor-not-allowed disabled:opacity-30;
+  }
+  .soc-select {
+    @apply border border-black/15 bg-white px-3 py-2 font-mono text-[10px] uppercase tracking-[0.14em] text-[#0b0b0b] outline-none focus:border-[#0f62fe];
+  }
+  .soc-alert {
+    @apply flex items-center gap-2 border border-[#ff334b]/35 bg-[#ff334b]/10 px-4 py-3 text-xs text-[#ff334b];
+  }
+  .panel-title {
+    @apply text-base font-semibold tracking-tight text-[#0b0b0b];
+  }
+  .panel-subtitle {
+    @apply mt-1 font-mono text-[10px] uppercase tracking-[0.16em] text-[#71717a];
+  }
+  .meta {
+    @apply font-mono text-[10px] uppercase tracking-[0.18em] text-[#71717a];
+  }
+  .eyebrow {
+    @apply font-mono text-[10px] uppercase tracking-[0.28em] text-[#71717a];
+  }
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #a1a1aa #f9f9f9;
+}

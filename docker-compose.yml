@@ -7,7 +7,9 @@ services:
       - "8000:8000"
     volumes:
       # Supply the ignored datasets separately; the image intentionally has none.
+      # Prefer ./data; IBM/data is also mounted so get_data_dir() can find a scoreboard.
       - ./data:/app/data:ro
+      - ./IBM/data:/app/IBM/data:ro
     restart: unless-stopped
 
   frontend:
