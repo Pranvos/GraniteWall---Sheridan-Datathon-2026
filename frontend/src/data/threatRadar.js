@@ -1,7 +1,5 @@
 /** Critical-band threats for the SonarScan sonar dial. */
 
-const CATEGORIES = ['Memory', 'Remote code', 'Auth bypass', 'Supply chain', 'Web surface', 'Privilege']
-
 function hashString(value) {
   let h = 2166136261
   const s = String(value)
@@ -64,29 +62,6 @@ function summaryFor(severity) {
   return 'Outside the Critical sonar field.'
 }
 
-function buildMockCriticals(count = 25) {
-  return Array.from({ length: count }, (_, i) => {
-    const seed = hashString(`mock-critical-${i}`)
-    const risk = 0.38 + (1 - i / count) * 0.14 + unit(seed) * 0.02
-    const year = 2024 + (seed % 3)
-    const id = String(1000 + (seed % 89000)).padStart(5, '0')
-    return {
-      id: `CVE-${year}-${id}`,
-      cve_id: `CVE-${year}-${id}`,
-      risk_score: Number(risk.toFixed(4)),
-      cvss: Number((6 + unit(seed >> 3) * 3.5).toFixed(1)),
-      epss: Number((unit(seed >> 5) * 0.85).toFixed(4)),
-      exploit_signal_count: seed % 4,
-      is_kev: unit(seed >> 7) > 0.9,
-      category: CATEGORIES[seed % CATEGORIES.length],
-      severity: 'Critical',
-      granite_confidence: Number((0.62 + unit(seed >> 9) * 0.32).toFixed(2)),
-      exposure: ['Limited', 'Segmented', 'Internet-facing'][seed % 3],
-      summary: summaryFor('Critical'),
-    }
-  })
-}
-
 function normalizeLiveItem(item) {
   const risk = Number(item.risk_score) || 0
   const severity = normalizeSeverity(
@@ -116,16 +91,16 @@ function normalizeLiveItem(item) {
  * Even angular spacing so blips stay readable.
  */
 export function buildRadarThreats(liveItems = []) {
-  const source = liveItems.length > 0 ? liveItems.map(normalizeLiveItem) : buildMockCriticals(25)
-
-  const criticals = source
+  // Live scoreboard only — no mock blips (those inflated EPSS / Granite % before the API loaded).
+  const criticals = liveItems
+    .map(normalizeLiveItem)
     .filter((item) => item.severity === 'Critical')
     .sort((a, b) => b.risk_score - a.risk_score)
 
-  const pool = criticals.length > 0 ? criticals : buildMockCriticals(25)
-  const n = pool.length
+  const n = criticals.length
+  if (n === 0) return []
 
-  return pool.map((item, index) => {
+  return criticals.map((item, index) => {
     // Radius = urgency. Angle = stable hash of CVE so the field isn't a spiral.
     const seed = hashString(item.cve_id || item.id || index)
     const angle = unit(seed) * Math.PI * 2
@@ -150,10 +125,17 @@ export function summarizeThreats(threats, liveItems = []) {
     threats.length === 0
       ? 0
       : threats.reduce((sum, t) => sum + (t.granite_confidence || 0), 0) / threats.length
-  const avgEpss =
+  // Critical / sonar cohort (~top 25 = top 5% of top-500)
+  const avgEpssTop25 =
     threats.length === 0
       ? 0
       : threats.reduce((sum, t) => sum + (t.epss || 0), 0) / threats.length
+
+  // Full ranked top-500 from the live scoreboard payload
+  const avgEpssTop500 =
+    liveItems.length === 0
+      ? avgEpssTop25
+      : liveItems.reduce((sum, item) => sum + (Number(item.epss) || 0), 0) / liveItems.length
 
   const cohortCritical =
     liveItems.length > 0
@@ -172,7 +154,9 @@ export function summarizeThreats(threats, liveItems = []) {
     kev,
     signals,
     avgConfidence,
-    avgEpss,
+    avgEpss: avgEpssTop25,
+    avgEpssTop25,
+    avgEpssTop500,
     cohortCritical,
     cohortHigh: 0,
     cohortSize: liveItems.length || threats.length,

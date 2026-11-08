@@ -1,13 +1,20 @@
-export default function ThreatMetrics({ summary, sourceLabel }) {
+export default function ThreatMetrics({ summary, sourceLabel, loading = false }) {
   const items = [
     {
       label: 'On sonar',
-      value: `${summary.critical ?? summary.total} critical`,
+      value: loading ? '—' : `${summary.critical ?? summary.total} critical`,
     },
-    { label: 'Avg EPSS', value: Number(summary.avgEpss || 0).toFixed(3) },
+    {
+      label: 'Avg EPSS · 500',
+      value: loading ? '—' : Number(summary.avgEpssTop500 ?? summary.avgEpss ?? 0).toFixed(3),
+    },
+    {
+      label: 'Avg EPSS · 25',
+      value: loading ? '—' : Number(summary.avgEpssTop25 ?? summary.avgEpss ?? 0).toFixed(3),
+    },
     {
       label: 'Granite',
-      value: `${Math.round((summary.avgConfidence || 0) * 100)}%`,
+      value: loading ? '—' : `${Math.round((summary.avgConfidence || 0) * 100)}%`,
     },
   ]
 

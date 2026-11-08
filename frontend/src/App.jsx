@@ -543,12 +543,13 @@ function OperationsStory({ riskSummary, onOpenQueue }) {
   )
 }
 
-function LandingPage({ activeLens, onEnter, riskPoints }) {
+function LandingPage({ activeLens, onEnter, riskPoints, scoreboardStatus }) {
   return (
     <div id="top" className="relative overflow-x-hidden bg-[var(--paper)] text-[var(--ink)]">
       <SiteNav />
       <GraniteWallHero
         riskPoints={riskPoints}
+        scoreboardStatus={scoreboardStatus}
         onEnterOperations={() =>
           onEnter({
             id: 'radar-enter',
@@ -567,6 +568,7 @@ function LandingPage({ activeLens, onEnter, riskPoints }) {
 function App() {
   const [activeLens, setActiveLens] = useState(null)
   const [riskPoints, setRiskPoints] = useState([])
+  const [scoreboardStatus, setScoreboardStatus] = useState('loading')
   const enterLens = useCallback((cluster) => {
     setActiveLens(cluster)
     window.setTimeout(() => document.getElementById('operations')?.scrollIntoView({ behavior: 'smooth' }), 0)
@@ -574,6 +576,7 @@ function App() {
 
   useEffect(() => {
     let cancelled = false
+    setScoreboardStatus('loading')
     fetch(`${API_BASE_URL}/api/v1/vulnerabilities?method=direct_risk&top_k=500&page=1&page_size=500`)
       .then(async (response) => {
         if (!response.ok) throw new Error('Top-500 request failed')
@@ -581,17 +584,28 @@ function App() {
       })
       .then((payload) => {
         if (cancelled) return
-        setRiskPoints(buildRiskPoints(payload.items || []))
+        const points = buildRiskPoints(payload.items || [])
+        setRiskPoints(points)
+        setScoreboardStatus(points.length > 0 ? 'ready' : 'empty')
       })
       .catch(() => {
-        if (!cancelled) setRiskPoints([])
+        if (cancelled) return
+        setRiskPoints([])
+        setScoreboardStatus('error')
       })
     return () => {
       cancelled = true
     }
   }, [])
 
-  return <LandingPage activeLens={activeLens} onEnter={enterLens} riskPoints={riskPoints} />
+  return (
+    <LandingPage
+      activeLens={activeLens}
+      onEnter={enterLens}
+      riskPoints={riskPoints}
+      scoreboardStatus={scoreboardStatus}
+    />
+  )
 }
 
 function buildRiskPoints(items) {
@@ -604,14 +618,16 @@ function buildRiskPoints(items) {
     const radius = Math.sqrt(1 - y * y)
     const theta = goldenAngle * index
     return {
+      ...item,
       id: item.cve_id,
       cve_id: item.cve_id,
       name: item.cve_id,
       description: `${category} · risk ${Number(item.risk_score).toFixed(4)}`,
       color: definition.color,
       glow: definition.glow,
+      // Keep API percentile band last so radar filters Critical correctly.
+      severity_category: category,
       category,
-      ...item,
       basePosition: [radius * Math.cos(theta) * 1.55, y * 1.55, radius * Math.sin(theta) * 1.55],
       dashboard: { clusterName: item.cve_id, accent: definition.color, metrics: { analyzed: 1, hotspots: item.exploit_signal_count, graniteConfidence: item.risk_score, exploitRate: item.epss }, weeks: [], riskBreakdown: [], vulns: [] },
     }

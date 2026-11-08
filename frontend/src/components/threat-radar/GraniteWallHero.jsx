@@ -8,15 +8,19 @@ import VulnerabilityInspector from './VulnerabilityInspector'
 /**
  * Editorial hero — precision threat radar as the centrepiece.
  */
-export default function GraniteWallHero({ riskPoints = [], onEnterOperations }) {
+export default function GraniteWallHero({ riskPoints = [], scoreboardStatus = 'loading', onEnterOperations }) {
   const [selected, setSelected] = useState(null)
 
   const threats = useMemo(() => buildRadarThreats(riskPoints), [riskPoints])
   const summary = useMemo(() => summarizeThreats(threats, riskPoints), [threats, riskPoints])
   const sourceLabel =
-    riskPoints.length > 0
-      ? `Critical sonar · top 5% of ranked top-${riskPoints.length}`
-      : 'Critical sonar · Granite top-priority band'
+    scoreboardStatus === 'loading'
+      ? 'Loading live scoreboard…'
+      : scoreboardStatus === 'error'
+        ? 'Scoreboard API unreachable'
+        : riskPoints.length > 0
+          ? `Critical sonar · top 5% of ranked top-${riskPoints.length}`
+          : 'No Critical findings in top-500'
 
   const selectedThreat = selected
     ? threats.find((t) => t.cve_id === selected) || null
@@ -42,7 +46,7 @@ export default function GraniteWallHero({ riskPoints = [], onEnterOperations }) 
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.05 }}
-              className="mt-6 max-w-[16ch] text-[clamp(2.1rem,4.4vw,3.35rem)] font-semibold leading-[1.12] tracking-[-0.035em] text-[var(--ink)] line-clamp-3"
+              className="mt-6 max-w-[22ch] text-[clamp(2.1rem,4.4vw,3.35rem)] font-semibold leading-[1.12] tracking-[-0.035em] text-[var(--ink)]"
               style={{ fontFamily: 'var(--font-story), Montserrat, sans-serif' }}
             >
               An AI-powered early warning radar that predicts which vulnerabilities attackers will weaponize next.
@@ -78,7 +82,11 @@ export default function GraniteWallHero({ riskPoints = [], onEnterOperations }) 
             </motion.div>
 
             <div className="mt-12 border-t border-[var(--line)] pt-8">
-              <ThreatMetrics summary={summary} sourceLabel={sourceLabel} />
+              <ThreatMetrics
+                summary={summary}
+                sourceLabel={sourceLabel}
+                loading={scoreboardStatus === 'loading'}
+              />
             </div>
           </div>
 
@@ -102,10 +110,8 @@ export default function GraniteWallHero({ riskPoints = [], onEnterOperations }) 
                   onSelect={(threat) => setSelected(threat?.cve_id || null)}
                 />
                 <p className="mt-5 max-w-sm text-center font-[family-name:var(--font-sans)] text-[11px] leading-relaxed text-[var(--meta-soft)]">
-                  Blips appear when the sweep finds them, fade across ~¾ of a revolution,
-                  then stay dark until the next pass. Higher risk closer to centre.
+                  Higher risk closer to centre.
                 </p>
-
               </div>
 
               <VulnerabilityInspector
