@@ -18,12 +18,13 @@ ENV/
 *.csv.gz
 *.csv.zip
 
+# Local-only dataset + brief (do not push)
+IBM/
+Project Brief*.pdf
+*.pdf
+
 # Local environment and editor files
 .env
 .env.*
 .DS_Store
 .vscode/
-
-# Local ignores
-IBM/
-*.pdf
