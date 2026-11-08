@@ -1,153 +1,324 @@
-import { Bar, BarChart, CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
-import { Activity, Target, Users, Zap } from 'lucide-react'
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  LabelList,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  XAxis,
+  YAxis,
+} from 'recharts'
 
-const chartTip = { background: '#ffffff', border: '1px solid rgba(11,11,11,0.12)', fontSize: 12, color: '#0b0b0b' }
-const colors = ['#0f62fe', '#ff334b', '#f59e0b', '#3b82f6', '#a1a1aa']
-const label = (method) => method.replaceAll('_', ' ')
-const percent = (value) => `${(Number(value) * 100).toFixed(2)}%`
-const tick = { fill: '#71717a', fontSize: 10 }
-const grid = '#e4e4e7'
-
-function Metric({ icon: Icon, title, value, detail, tone }) {
-  return (
-    <div className="soc-panel p-4">
-      <div className={`flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.16em] ${tone}`}>
-        <Icon size={14} /> {title}
-      </div>
-      <div className="mt-2 font-mono text-xl font-semibold text-[#0b0b0b]">{value}</div>
-      <div className="mt-1 text-xs text-[#71717a]">{detail}</div>
-    </div>
-  )
+const colors = {
+  precision: '#0f62fe',
+  recall: '#A65A48',
+  winner: '#0f62fe',
+  baseline: '#A1A1AA',
 }
+const tick = { fill: 'var(--meta)', fontSize: 11, fontFamily: 'Montserrat, sans-serif' }
+const grid = 'var(--line)'
 
-function ChartPanel({ title, subtitle, children }) {
-  return (
-    <div className="soc-panel p-5">
-      <div className="mb-4"><h3 className="panel-title">{title}</h3><p className="panel-subtitle">{subtitle}</p></div>
-      <div className="h-64">{children}</div>
-    </div>
-  )
-}
+const label = (method) => String(method || '').replaceAll('_', ' ')
+const percent = (value, digits = 1) => `${(Number(value) * 100).toFixed(digits)}%`
+const percentLabel = (value) => percent(value, 1)
 
+/**
+ * Risk rankings as a short evaluation story — fewer figures, each explained.
+ */
 export default function EvaluationInsights({ summary, results, loading, error }) {
-  const methods = summary.map((row) => row.method)
+  const ranked = [...summary].sort((a, b) => b.precision - a.precision)
+  const best = ranked[0] || null
+  const baseline = ranked.find((row) => row.method === 'cvss3') || ranked[ranked.length - 1] || null
+  const runnerUp = ranked[1] || null
+
+  const chartData = ranked.map((row) => ({
+    ...row,
+    methodLabel: label(row.method),
+  }))
+
+  const methodsToPlot = [best?.method, baseline?.method].filter(Boolean)
   const monthly = [...results].sort((a, b) => a.month.localeCompare(b.month))
-  const trend = monthly.reduce((months, row) => {
+  const trendRows = monthly.reduce((months, row) => {
+    if (!methodsToPlot.includes(row.method)) return months
     const current = months.get(row.month) || { month: row.month }
-    current[`${row.method}_hits`] = row.hits
-    current[`${row.method}_precision`] = row.precision
-    current[`${row.method}_recall`] = row.recall
-    current[`${row.method}_candidates`] = row.candidates
-    current[`${row.method}_positives`] = row.positives
+    current[row.method] = row.hits
     months.set(row.month, current)
     return months
   }, new Map())
-  const trendRows = [...trend.values()]
-  const best = summary.reduce((winner, row) => (!winner || row.precision > winner.precision ? row : winner), null)
-  const totals = results.reduce((acc, row) => ({
-    hits: acc.hits + row.hits,
-    candidates: acc.candidates + row.candidates,
-    positives: acc.positives + row.positives,
-  }), { hits: 0, candidates: 0, positives: 0 })
+  const trendData = [...trendRows.values()]
+
+  const hitLift =
+    best && baseline && baseline.hits > 0
+      ? ((best.hits - baseline.hits) / baseline.hits) * 100
+      : null
 
   if (!summary.length && !results.length) {
     return (
-      <div className="soc-panel p-5 text-sm text-[#71717a]">
-        {loading ? 'Loading evaluation feed…' : error ? `Evaluation unavailable: ${error}` : 'No evaluation data available.'}
+      <div
+        className="border border-[var(--line)] px-5 py-8 text-sm text-[var(--meta)]"
+        style={{ fontFamily: 'var(--font-story), Montserrat, sans-serif' }}
+      >
+        {loading
+          ? 'Loading evaluation feed…'
+          : error
+            ? `Evaluation unavailable: ${error}`
+            : 'No evaluation data available.'}
       </div>
     )
   }
 
   return (
-    <section className="space-y-5">
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <Metric icon={Target} title="Best precision@500" value={best ? percent(best.precision) : '—'} detail={best ? label(best.method) : 'No method'} tone="text-[#0f62fe]" />
-        <Metric icon={Activity} title="Total hits" value={totals.hits.toLocaleString()} detail="Across monthly evaluations" tone="text-[#0b0b0b]" />
-        <Metric icon={Users} title="Candidates" value={totals.candidates.toLocaleString()} detail="Monthly ranking pools" tone="text-[#f59e0b]" />
-        <Metric icon={Zap} title="Positives" value={totals.positives.toLocaleString()} detail="Future KEV additions" tone="text-[#ff334b]" />
-      </div>
+    <section
+      className="mx-auto max-w-5xl space-y-0 bg-transparent"
+      style={{ fontFamily: 'var(--font-story), Montserrat, sans-serif' }}
+    >
+      <header className="border-b border-[var(--line)] pb-10 pt-2">
+        <p className="text-[11px] font-medium uppercase tracking-[0.28em] text-[var(--meta)]">
+          Held-out ranking evaluation
+        </p>
+        <h2 className="mt-4 max-w-[22ch] text-[clamp(1.85rem,3.5vw,2.75rem)] font-semibold leading-[1.15] tracking-[-0.03em] text-[var(--ink)]">
+          Does the ranking recover future exploited CVEs?
+        </h2>
+        <p className="mt-4 max-w-2xl text-[1.1rem] leading-relaxed text-[var(--meta)]">
+          Each month we hide later KEV additions, rank the pool, and score the top 500.
+          Precision asks how many of those 500 were truly exploited later. Recall asks how many
+          of the future exploits we caught.
+        </p>
+      </header>
 
-      <div className="grid gap-5 xl:grid-cols-2">
-        <ChartPanel title="Method comparison" subtitle="Hits, precision@500, recall@500, candidates and positives">
+      {/* Beat 1 — winning method */}
+      <article className="grid gap-6 border-b border-[var(--line)] py-14 md:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] md:items-center">
+        <div>
+          <p className="text-[11px] font-medium uppercase tracking-[0.24em] text-[var(--meta-soft)]">01</p>
+          <h3 className="mt-3 text-[clamp(1.35rem,2.4vw,1.85rem)] font-semibold leading-snug tracking-[-0.02em] text-[var(--ink)]">
+            Best precision@500
+          </h3>
+          <p className="mt-4 max-w-xl text-[1.05rem] leading-relaxed text-[var(--meta)] md:text-[1.15rem]">
+            {best
+              ? `${label(best.method)} leads the evaluation window. That is the ranking signal we trust when placing Critical findings on the sonar.`
+              : 'No winning method available yet.'}
+          </p>
+          {runnerUp ? (
+            <p className="mt-3 max-w-xl text-[0.95rem] leading-relaxed text-[var(--meta)]">
+              Next closest: {label(runnerUp.method)} at {percent(runnerUp.precision)}.
+            </p>
+          ) : null}
+        </div>
+        <div className="md:pl-6 md:text-right">
+          <p className="text-[clamp(4.5rem,12vw,7.5rem)] font-semibold tabular-nums leading-[0.9] tracking-[-0.05em] text-[var(--ink)]">
+            {best ? percent(best.precision) : '—'}
+          </p>
+          <p className="mt-4 text-[11px] font-medium uppercase tracking-[0.22em] text-[var(--meta)]">
+            {best ? label(best.method) : 'best method'}
+          </p>
+        </div>
+      </article>
+
+      {/* Beat 2 — precision / recall figure */}
+      <article className="border-b border-[var(--line)] py-14">
+        <p className="text-[11px] font-medium uppercase tracking-[0.24em] text-[var(--meta-soft)]">02</p>
+        <h3 className="mt-3 text-[clamp(1.35rem,2.4vw,1.85rem)] font-semibold leading-snug tracking-[-0.02em] text-[var(--ink)]">
+          Precision and recall across methods
+        </h3>
+        <p className="mt-4 max-w-2xl text-[1.05rem] leading-relaxed text-[var(--meta)] md:text-[1.15rem]">
+          Blue is precision@500: how clean the top slice is. Terracotta is recall@500: how much of
+          the future-exploited set that slice recovers. CVSS alone barely moves the needle.
+        </p>
+
+        <div className="mt-10 h-[22rem] w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={summary} layout="vertical" margin={{ left: 18, right: 18 }}>
-              <CartesianGrid stroke={grid} horizontal={false} />
-              <XAxis type="number" tick={tick} />
-              <YAxis type="category" dataKey="method" width={105} tick={tick} tickFormatter={label} />
-              <Tooltip contentStyle={chartTip} />
-              <Legend wrapperStyle={{ fontSize: 10 }} />
-              <Bar dataKey="hits" fill="#0f62fe" name="Hits" />
-              <Bar dataKey="positives" fill="#ff334b" name="Positives" />
-              <Bar dataKey="candidates" fill="#f59e0b" name="Candidates" />
+            <BarChart
+              data={chartData}
+              margin={{ top: 28, right: 12, left: 4, bottom: 8 }}
+              barCategoryGap="28%"
+            >
+              <CartesianGrid stroke={grid} strokeDasharray="3 3" vertical={false} />
+              <XAxis dataKey="methodLabel" tick={tick} axisLine={false} tickLine={false} />
+              <YAxis
+                tick={tick}
+                axisLine={false}
+                tickLine={false}
+                tickFormatter={(value) => `${(value * 100).toFixed(0)}%`}
+                width={42}
+              />
+              <Bar
+                dataKey="precision"
+                fill={colors.precision}
+                name="Precision@500"
+                maxBarSize={42}
+                isAnimationActive={false}
+                activeBar={false}
+              >
+                <LabelList
+                  dataKey="precision"
+                  position="top"
+                  formatter={percentLabel}
+                  style={{ fill: 'var(--ink)', fontSize: 11, fontWeight: 600, fontFamily: 'Montserrat, sans-serif' }}
+                />
+              </Bar>
+              <Bar
+                dataKey="recall"
+                fill={colors.recall}
+                name="Recall@500"
+                maxBarSize={42}
+                isAnimationActive={false}
+                activeBar={false}
+              >
+                <LabelList
+                  dataKey="recall"
+                  position="top"
+                  formatter={percentLabel}
+                  style={{ fill: 'var(--ink)', fontSize: 11, fontWeight: 600, fontFamily: 'Montserrat, sans-serif' }}
+                />
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
-        </ChartPanel>
-        <ChartPanel title="Precision and recall" subtitle="Ranking quality at the top 500">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={summary} margin={{ left: 4, right: 12 }}>
-              <CartesianGrid stroke={grid} strokeDasharray="3 3" vertical={false} />
-              <XAxis dataKey="method" tick={tick} tickFormatter={label} />
-              <YAxis tick={tick} tickFormatter={(value) => `${(value * 100).toFixed(0)}%`} />
-              <Tooltip contentStyle={chartTip} formatter={(value) => percent(value)} />
-              <Legend wrapperStyle={{ fontSize: 10 }} />
-              <Bar dataKey="precision" fill="#0f62fe" name="Precision@500" />
-              <Bar dataKey="recall" fill="#ff334b" name="Recall@500" />
-            </BarChart>
-          </ResponsiveContainer>
-        </ChartPanel>
-      </div>
+        </div>
+        <div className="mt-2 flex flex-wrap gap-6 text-[11px] font-medium uppercase tracking-[0.18em] text-[var(--meta)]">
+          <span className="inline-flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full" style={{ background: colors.precision }} /> Precision@500
+          </span>
+          <span className="inline-flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full" style={{ background: colors.recall }} /> Recall@500
+          </span>
+        </div>
+      </article>
 
-      <div className="grid gap-5 xl:grid-cols-2">
-        <ChartPanel title="Monthly hits" subtitle="Confirmed ranking hits by method">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={trendRows} margin={{ right: 16 }}>
-              <CartesianGrid stroke={grid} strokeDasharray="3 3" vertical={false} />
-              <XAxis dataKey="month" tick={tick} />
-              <YAxis tick={tick} />
-              <Tooltip contentStyle={chartTip} />
-              <Legend wrapperStyle={{ fontSize: 10 }} />
-              {methods.map((method, index) => <Line key={`${method}-hits`} type="monotone" dataKey={`${method}_hits`} stroke={colors[index % colors.length]} name={`${label(method)} hits`} strokeWidth={2} dot={false} />)}
-            </LineChart>
-          </ResponsiveContainer>
-        </ChartPanel>
-        <ChartPanel title="Monthly quality" subtitle="Precision@500 and recall@500 by method">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={trendRows} margin={{ right: 16 }}>
-              <CartesianGrid stroke={grid} strokeDasharray="3 3" vertical={false} />
-              <XAxis dataKey="month" tick={tick} />
-              <YAxis tick={tick} tickFormatter={(value) => `${(value * 100).toFixed(0)}%`} />
-              <Tooltip contentStyle={chartTip} formatter={(value) => percent(value)} />
-              <Legend wrapperStyle={{ fontSize: 10 }} />
-              {methods.map((method, index) => <Line key={`${method}-precision`} type="monotone" dataKey={`${method}_precision`} stroke={colors[index % colors.length]} name={`${label(method)} precision`} strokeWidth={2} dot={false} />)}
-              {methods.map((method, index) => <Line key={`${method}-recall`} type="monotone" dataKey={`${method}_recall`} stroke={colors[index % colors.length]} strokeDasharray="4 4" name={`${label(method)} recall`} strokeWidth={2} dot={false} />)}
-            </LineChart>
-          </ResponsiveContainer>
-        </ChartPanel>
-        <ChartPanel title="Monthly volume" subtitle="Candidates and future positives by method">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={trendRows} margin={{ right: 16 }}>
-              <CartesianGrid stroke={grid} strokeDasharray="3 3" vertical={false} />
-              <XAxis dataKey="month" tick={tick} />
-              <YAxis tick={tick} />
-              <Tooltip contentStyle={chartTip} />
-              <Legend wrapperStyle={{ fontSize: 10 }} />
-              {methods.map((method, index) => <Line key={`${method}-candidates`} type="monotone" dataKey={`${method}_candidates`} stroke={colors[index % colors.length]} name={`${label(method)} candidates`} strokeWidth={2} dot={false} />)}
-              {methods.map((method, index) => <Line key={`${method}-positives`} type="monotone" dataKey={`${method}_positives`} stroke={colors[index % colors.length]} strokeDasharray="4 4" name={`${label(method)} positives`} strokeWidth={2} dot={false} />)}
-            </LineChart>
-          </ResponsiveContainer>
-        </ChartPanel>
-      </div>
+      {/* Beat 3 — lift vs weak baseline */}
+      {best && baseline && best.method !== baseline.method ? (
+        <article className="grid gap-6 border-b border-[var(--line)] py-14 md:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] md:items-center">
+          <div>
+            <p className="text-[11px] font-medium uppercase tracking-[0.24em] text-[var(--meta-soft)]">03</p>
+            <h3 className="mt-3 text-[clamp(1.35rem,2.4vw,1.85rem)] font-semibold leading-snug tracking-[-0.02em] text-[var(--ink)]">
+              Hits versus a weak baseline
+            </h3>
+            <p className="mt-4 max-w-xl text-[1.05rem] leading-relaxed text-[var(--meta)] md:text-[1.15rem]">
+              Average monthly hits in the top 500. {label(best.method)} recovers far more future
+              exploited CVEs than {label(baseline.method)}, which is why severity alone is not
+              enough for the sonar.
+            </p>
+          </div>
+          <div className="md:pl-6 md:text-right">
+            <p className="text-[clamp(4.5rem,12vw,7.5rem)] font-semibold tabular-nums leading-[0.9] tracking-[-0.05em] text-[var(--ink)]">
+              {best.hits.toFixed(1)}
+            </p>
+            <p className="mt-4 text-[11px] font-medium uppercase tracking-[0.22em] text-[var(--meta)]">
+              avg hits / month · {label(best.method)}
+            </p>
+            {hitLift != null ? (
+              <p className="mt-2 text-[11px] font-medium uppercase tracking-[0.16em] text-[var(--meta-soft)]">
+                {hitLift >= 0 ? '+' : ''}
+                {hitLift.toFixed(0)}% vs {label(baseline.method)}
+              </p>
+            ) : null}
+          </div>
+        </article>
+      ) : null}
 
-      <div className="overflow-x-auto soc-panel">
-        <table className="w-full min-w-[760px] text-left text-xs">
-          <thead className="border-b border-black/10 font-mono text-[10px] uppercase tracking-wider text-[#71717a]">
-            <tr>{['Month', 'Method', 'Hits', 'Precision@500', 'Recall@500', 'Candidates', 'Positives'].map((heading) => <th key={heading} className="px-4 py-3">{heading}</th>)}</tr>
-          </thead>
-          <tbody>{monthly.map((row) => <tr key={`${row.month}-${row.method}`} className="border-b border-black/10/70 text-[#3f3f46]">
-            <td className="px-4 py-3 font-mono">{row.month}</td><td className="px-4 py-3">{label(row.method)}</td><td className="px-4 py-3 font-mono">{row.hits}</td><td className="px-4 py-3 font-mono">{percent(row.precision)}</td><td className="px-4 py-3 font-mono">{percent(row.recall)}</td><td className="px-4 py-3 font-mono">{row.candidates}</td><td className="px-4 py-3 font-mono">{row.positives}</td>
-          </tr>)}</tbody>
-        </table>
-      </div>
+      {/* Beat 4 — one trend line only */}
+      {trendData.length > 1 && methodsToPlot.length >= 1 ? (
+        <article className="border-b border-[var(--line)] py-14">
+          <p className="text-[11px] font-medium uppercase tracking-[0.24em] text-[var(--meta-soft)]">04</p>
+          <h3 className="mt-3 text-[clamp(1.35rem,2.4vw,1.85rem)] font-semibold leading-snug tracking-[-0.02em] text-[var(--ink)]">
+            Monthly hits over the evaluation window
+          </h3>
+          <p className="mt-4 max-w-2xl text-[1.05rem] leading-relaxed text-[var(--meta)] md:text-[1.15rem]">
+            One chart, two methods: the leader against the weak baseline. Stability across months
+            matters more than a single lucky window.
+          </p>
+
+          <div className="mt-10 h-[20rem] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={trendData} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
+                <CartesianGrid stroke={grid} strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="month" tick={tick} axisLine={false} tickLine={false} minTickGap={28} />
+                <YAxis tick={tick} axisLine={false} tickLine={false} width={36} allowDecimals={false} />
+                {best ? (
+                  <Line
+                    type="monotone"
+                    dataKey={best.method}
+                    stroke={colors.winner}
+                    strokeWidth={2.25}
+                    dot={false}
+                    isAnimationActive={false}
+                    name={label(best.method)}
+                  />
+                ) : null}
+                {baseline && baseline.method !== best?.method ? (
+                  <Line
+                    type="monotone"
+                    dataKey={baseline.method}
+                    stroke={colors.baseline}
+                    strokeWidth={2}
+                    dot={false}
+                    isAnimationActive={false}
+                    name={label(baseline.method)}
+                  />
+                ) : null}
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="mt-2 flex flex-wrap gap-6 text-[11px] font-medium uppercase tracking-[0.18em] text-[var(--meta)]">
+            {best ? (
+              <span className="inline-flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full" style={{ background: colors.winner }} /> {label(best.method)}
+              </span>
+            ) : null}
+            {baseline && baseline.method !== best?.method ? (
+              <span className="inline-flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full" style={{ background: colors.baseline }} /> {label(baseline.method)}
+              </span>
+            ) : null}
+          </div>
+        </article>
+      ) : null}
+
+      {/* Compact method strip — replaces the giant monthly table */}
+      <article className="py-14">
+        <p className="text-[11px] font-medium uppercase tracking-[0.24em] text-[var(--meta-soft)]">05</p>
+        <h3 className="mt-3 text-[clamp(1.35rem,2.4vw,1.85rem)] font-semibold leading-snug tracking-[-0.02em] text-[var(--ink)]">
+          Method scoreboard
+        </h3>
+        <p className="mt-4 max-w-2xl text-[1.05rem] leading-relaxed text-[var(--meta)] md:text-[1.15rem]">
+          Aggregated across the held-out months. Use this as the shortlist, not a raw dump of every
+          monthly cell.
+        </p>
+
+        <div className="mt-8 divide-y divide-black/10 border-y border-[var(--line)]">
+          {ranked.map((row, index) => (
+            <div
+              key={row.method}
+              className="grid grid-cols-[auto_1fr_auto] items-baseline gap-4 py-5 sm:grid-cols-[3rem_1fr_repeat(3,minmax(0,5.5rem))]"
+            >
+              <span className="text-[11px] font-medium uppercase tracking-[0.18em] text-[var(--meta-soft)]">
+                {String(index + 1).padStart(2, '0')}
+              </span>
+              <span className="text-[1.05rem] font-semibold tracking-[-0.02em] text-[var(--ink)]">
+                {label(row.method)}
+              </span>
+              <span className="text-right font-semibold tabular-nums text-[var(--ink)] sm:text-left">
+                {percent(row.precision)}
+                <span className="mt-1 block text-[10px] font-medium uppercase tracking-[0.16em] text-[var(--meta-soft)]">
+                  precision
+                </span>
+              </span>
+              <span className="col-span-3 hidden text-right font-semibold tabular-nums text-[var(--ink)] sm:col-span-1 sm:block sm:text-left">
+                {percent(row.recall)}
+                <span className="mt-1 block text-[10px] font-medium uppercase tracking-[0.16em] text-[var(--meta-soft)]">
+                  recall
+                </span>
+              </span>
+              <span className="col-span-3 hidden text-right font-semibold tabular-nums text-[var(--ink)] sm:col-span-1 sm:block sm:text-left">
+                {row.hits.toFixed(1)}
+                <span className="mt-1 block text-[10px] font-medium uppercase tracking-[0.16em] text-[var(--meta-soft)]">
+                  avg hits
+                </span>
+              </span>
+            </div>
+          ))}
+        </div>
+      </article>
     </section>
   )
 }
