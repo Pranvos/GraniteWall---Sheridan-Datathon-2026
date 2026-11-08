@@ -32,9 +32,15 @@ def _read_csv(path: Path) -> list[dict[str, Any]]:
 
 
 def _load_scoreboard() -> pd.DataFrame:
-    if not SCOREBOARD_PATH.exists():
-        raise HTTPException(status_code=404, detail="Scoreboard dataset not found.")
-    scored_path = SCORED_SCOREBOARD_PATH if SCORED_SCOREBOARD_PATH.exists() else SCOREBOARD_PATH
+    if SCORED_SCOREBOARD_PATH.exists():
+        scored_path = SCORED_SCOREBOARD_PATH
+    elif SCOREBOARD_PATH.exists():
+        scored_path = SCOREBOARD_PATH
+    else:
+        raise HTTPException(
+            status_code=404,
+            detail="Scoreboard dataset not found. Provide scoreboard_2026_scored.csv or scoreboard_2026.csv.",
+        )
     frame = pd.read_csv(scored_path)
     for column in SIGNAL_COLUMNS:
         if column not in frame.columns:
@@ -206,7 +212,7 @@ def get_evaluation() -> dict[str, Any]:
 def get_api_health() -> dict:
     return {
         "status": "ok",
-        "scoreboard_available": SCOREBOARD_PATH.exists(),
+        "scoreboard_available": SCOREBOARD_PATH.exists() or SCORED_SCOREBOARD_PATH.exists(),
         "granite_model_available": SCORED_SCOREBOARD_PATH.exists(),
         "evaluation_available": RESULTS_PATH.exists() and SUMMARY_PATH.exists(),
     }

@@ -5,10 +5,15 @@ services:
       dockerfile: backend/Dockerfile
     ports:
       - "8000:8000"
+    environment:
+      # Optional: public HTTPS links to CSVs (Vultr Object Storage, Drive direct link, etc.)
+      SCOREBOARD_SCORED_URL: ${SCOREBOARD_SCORED_URL:-}
+      SCOREBOARD_URL: ${SCOREBOARD_URL:-}
+      BACKTEST_RESULTS_URL: ${BACKTEST_RESULTS_URL:-}
+      BACKTEST_SUMMARY_URL: ${BACKTEST_SUMMARY_URL:-}
     volumes:
-      # Supply the ignored datasets separately; the image intentionally has none.
-      # Prefer ./data; IBM/data is also mounted so get_data_dir() can find a scoreboard.
-      - ./data:/app/data:ro
+      # Supply datasets via mount and/or SCOREBOARD_*_URL download on boot.
+      - ./data:/app/data
       - ./IBM/data:/app/IBM/data:ro
     restart: unless-stopped
 
@@ -17,6 +22,7 @@ services:
       context: .
       dockerfile: frontend/Dockerfile
       args:
+        # On Vultr set this to http://YOUR_VPS_IP:8000 (or your domain).
         VITE_API_URL: ${VITE_API_URL:-http://localhost:8000}
     ports:
       - "5173:80"
