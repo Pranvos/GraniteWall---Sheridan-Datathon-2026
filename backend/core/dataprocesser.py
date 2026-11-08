@@ -5,7 +5,7 @@ import os
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 # Assuming data is placed in a backend/data/ directory
-DATA_DIR = REPO_ROOT / "data" / "data"
+DATA_DIR = REPO_ROOT / "data"
 
 def load_vulnerabilities() -> pd.DataFrame:
     """Load vulnerabilities data and drop prohibited columns."""

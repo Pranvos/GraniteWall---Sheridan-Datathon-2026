@@ -54,13 +54,13 @@ export default function SiteNav({ className = '' }) {
   return (
     <>
       <nav
-        className={`pointer-events-auto relative z-40 flex items-center justify-between gap-4 border-b border-[#0B0B0B]/10 bg-[#F9F9F9]/85 px-4 py-3 backdrop-blur-md sm:px-6 md:px-10 ${className}`}
+        className={`pointer-events-auto relative z-40 flex items-center justify-between gap-4 border-b border-slate-800/80 bg-[#070b14]/90 px-4 py-3 text-slate-200 backdrop-blur-md sm:px-6 md:px-10 ${className}`}
         aria-label="Primary"
       >
         <a
           href="#top"
           data-cursor="hot"
-          className="select-text font-mono text-[10px] uppercase tracking-[0.28em] text-[#0B0B0B]/55 transition hover:text-[#0B0B0B]"
+          className="select-text font-mono text-[10px] uppercase tracking-[0.28em] text-slate-400 transition hover:text-cyan-300"
         >
           GraniteWall
         </a>
@@ -74,7 +74,7 @@ export default function SiteNav({ className = '' }) {
                 target="_blank"
                 rel="noreferrer"
                 data-cursor="hot"
-                className="inline-flex items-center gap-2 px-3 py-2 font-mono text-[10px] uppercase tracking-[0.22em] text-[#0B0B0B]/55 transition hover:bg-[#0B0B0B] hover:text-[#F9F9F9]"
+                className="inline-flex items-center gap-2 px-3 py-2 font-mono text-[10px] uppercase tracking-[0.22em] text-slate-400 transition hover:bg-cyan-400/10 hover:text-cyan-300"
               >
                 <Icon className="h-3.5 w-3.5" />
                 {label}
@@ -87,7 +87,7 @@ export default function SiteNav({ className = '' }) {
         <button
           type="button"
           data-cursor="hot"
-          className="inline-flex h-10 w-10 items-center justify-center border border-[#0B0B0B]/15 text-[#0B0B0B] transition hover:border-[#0B0B0B] hover:bg-[#0B0B0B] hover:text-[#F9F9F9] sm:hidden"
+          className="inline-flex h-10 w-10 items-center justify-center border border-slate-700 text-slate-300 transition hover:border-cyan-400/60 hover:bg-cyan-400/10 hover:text-cyan-300 sm:hidden"
           aria-expanded={open}
           aria-controls="site-menu"
           aria-label={open ? 'Close menu' : 'Open menu'}
@@ -110,25 +110,25 @@ export default function SiteNav({ className = '' }) {
             <button
               type="button"
               aria-label="Close menu"
-              className="absolute inset-0 bg-[#0B0B0B]/35"
+              className="absolute inset-0 bg-black/70"
               onClick={() => setOpen(false)}
             />
             <motion.aside
-              className="absolute right-0 top-0 flex h-full w-[min(100%,20rem)] flex-col border-l border-[#0B0B0B]/10 bg-[#F9F9F9] shadow-[-12px_0_40px_rgba(0,0,0,0.08)]"
+              className="absolute right-0 top-0 flex h-full w-[min(100%,20rem)] flex-col border-l border-slate-800 bg-[#090e19] shadow-[-12px_0_40px_rgba(0,0,0,0.4)]"
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', stiffness: 380, damping: 34 }}
             >
-              <div className="flex items-center justify-between border-b border-[#0B0B0B]/10 px-5 py-4">
-                <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-[#0B0B0B]/45">
+              <div className="flex items-center justify-between border-b border-slate-800 px-5 py-4">
+                <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-slate-500">
                   Menu
                 </p>
                 <button
                   type="button"
                   data-cursor="hot"
                   aria-label="Close menu"
-                  className="inline-flex h-9 w-9 items-center justify-center border border-[#0B0B0B]/15"
+                  className="inline-flex h-9 w-9 items-center justify-center border border-slate-700 text-slate-300"
                   onClick={() => setOpen(false)}
                 >
                   <X className="h-4 w-4" />
@@ -143,7 +143,7 @@ export default function SiteNav({ className = '' }) {
                       target="_blank"
                       rel="noreferrer"
                       data-cursor="hot"
-                      className="flex items-center gap-3 border border-transparent px-4 py-3.5 font-mono text-[11px] uppercase tracking-[0.22em] text-[#0B0B0B] transition hover:border-[#0B0B0B]/15 hover:bg-[#0B0B0B]/[0.03]"
+                      className="flex items-center gap-3 border border-transparent px-4 py-3.5 font-mono text-[11px] uppercase tracking-[0.22em] text-slate-300 transition hover:border-slate-700 hover:bg-slate-800/50"
                       onClick={() => setOpen(false)}
                     >
                       <Icon className="h-4 w-4 shrink-0" />
@@ -153,7 +153,7 @@ export default function SiteNav({ className = '' }) {
                 ))}
               </ul>
 
-              <p className="mt-auto border-t border-[#0B0B0B]/10 px-5 py-4 font-mono text-[10px] uppercase tracking-[0.2em] text-[#0B0B0B]/35">
+              <p className="mt-auto border-t border-slate-800 px-5 py-4 font-mono text-[10px] uppercase tracking-[0.2em] text-slate-500">
                 IBM Granite · Datathon
               </p>
             </motion.aside>

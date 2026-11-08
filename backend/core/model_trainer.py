@@ -5,7 +5,7 @@ from pathlib import Path
 import ast
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-DATA_DIR = REPO_ROOT / "data" / "data"
+DATA_DIR = REPO_ROOT / "data"
 SIGNAL_COLUMNS = ["exploitdb", "metasploit", "nuclei", "poc_github"]
 
 

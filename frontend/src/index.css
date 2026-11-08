@@ -2,69 +2,18 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  color-scheme: light;
-  font-family: Inter, "Helvetica Neue", Helvetica, Arial, ui-sans-serif, system-ui, sans-serif;
-  background: #f9f9f9;
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
+:root { color-scheme: dark; font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-synthesis: none; text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased; }
+* { box-sizing: border-box; }
+html, body, #root { margin: 0; min-height: 100%; background: #070b14; }
+body { min-width: 320px; }
+button, input, select { font: inherit; }
+@layer components {
+  .soc-panel { @apply rounded border border-slate-800/90 bg-[#0d1524]/80 shadow-[0_12px_40px_rgba(0,0,0,0.16)]; }
+  .soc-button { @apply inline-flex items-center gap-2 rounded border border-slate-700 bg-slate-900 px-3 py-2 font-mono text-[10px] uppercase tracking-wider text-slate-300 transition hover:border-cyan-400/60 hover:text-cyan-300 disabled:cursor-not-allowed disabled:opacity-40; }
+  .soc-icon-button { @apply grid h-7 w-7 place-items-center rounded border border-slate-700 text-slate-400 transition hover:border-cyan-400/60 hover:text-cyan-300 disabled:cursor-not-allowed disabled:opacity-30; }
+  .soc-select { @apply rounded border border-slate-700 bg-slate-900 px-3 py-2 font-mono text-[10px] uppercase tracking-wider text-slate-300 outline-none; }
+  .soc-alert { @apply flex items-center gap-2 rounded border border-red-500/30 bg-red-500/10 px-4 py-3 text-xs text-red-300; }
+  .panel-title { @apply font-semibold text-slate-100; }
+  .panel-subtitle { @apply font-mono text-[10px] uppercase tracking-[0.16em] text-slate-500; }
 }
-
-* {
-  box-sizing: border-box;
-}
-
-html,
-body,
-#root {
-  margin: 0;
-  min-height: 100%;
-  background: #f9f9f9;
-}
-
-body {
-  min-width: 320px;
-  overflow-x: hidden;
-  color: #0b0b0b;
-}
-
-.cursor-none,
-.cursor-none * {
-  cursor: none !important;
-}
-
-/* Keep copy/select working even under the custom cursor shell */
-.select-text,
-.select-text * {
-  user-select: text !important;
-  -webkit-user-select: text !important;
-}
-
-* {
-  scrollbar-width: thin;
-  scrollbar-color: #a3a3a3 transparent;
-}
-
-*::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-*::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-*::-webkit-scrollbar-thumb {
-  background: #a3a3a3;
-  border-radius: 0;
-}
-
-::selection {
-  background: #0033ff;
-  color: #f9f9f9;
-}
-
-canvas {
-  display: block;
-}
+* { scrollbar-width: thin; scrollbar-color: #334155 #0b1220; }

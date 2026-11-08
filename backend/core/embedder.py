@@ -3,16 +3,17 @@ from sentence_transformers import SentenceTransformer
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-DATA_DIR = REPO_ROOT / "data" / "data"
+DATA_DIR = REPO_ROOT / "data"
 
 def generate_vulnerability_embeddings(input_csv: str = "vulnerabilities_cleaned.csv", 
                                       output_csv: str = "vulnerabilities_embedded.csv",
-                                      max_rows: int = 30000):
+                                      max_rows: int = 79621,
+                                      batch_size: int = 32):
     """
     Read vulnerability descriptions, generate Granite embeddings, and save them.
 
-    max_rows limits processing so large datasets can be handled in manageable
-    runs. Pass None to process the entire input file.
+    max_rows limits processing. batch_size controls the number of descriptions
+    encoded at once.
     """
     print("Loading IBM Granite embedding model...")
     # Using the lightweight R2 model for hackathon speed
@@ -31,7 +32,11 @@ def generate_vulnerability_embeddings(input_csv: str = "vulnerabilities_cleaned.
     
     print(f"Generating embeddings for {len(descriptions)} vulnerabilities...")
     # The encode function automatically batches the processing
-    embeddings = model.encode(descriptions, show_progress_bar=True)
+    embeddings = model.encode(
+        descriptions,
+        batch_size=batch_size,
+        show_progress_bar=True,
+    )
     
     # Add the embeddings as a new column in the DataFrame
     df['embedding'] = embeddings.tolist()
