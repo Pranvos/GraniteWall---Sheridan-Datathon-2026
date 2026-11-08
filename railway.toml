@@ -1,0 +1,9 @@
+# Railway service: API (create this service first)
+# Dashboard: set Root Directory empty / repo root, Builder = Dockerfile
+[build]
+dockerfilePath = "backend/Dockerfile"
+
+[deploy]
+healthcheckPath = "/api/v1/health"
+healthcheckTimeout = 120
+restartPolicyType = "ON_FAILURE"

@@ -1,0 +1,9 @@
+# Railway service: frontend (second service)
+# Dashboard: Root Directory = frontend
+[build]
+builder = "NIXPACKS"
+buildCommand = "npm ci && npm run build"
+
+[deploy]
+startCommand = "npx --yes serve -s dist -l $PORT"
+restartPolicyType = "ON_FAILURE"
