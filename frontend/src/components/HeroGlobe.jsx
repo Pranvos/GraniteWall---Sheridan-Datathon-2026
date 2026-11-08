@@ -102,6 +102,20 @@ function pickInitialVertexIndices(verts, count) {
         chosen = idx
         break
       }
+
+      function nearestMeshVertexIndex(verts, position) {
+        const target = new THREE.Vector3(position[0], position[1], position[2])
+        let best = 0
+        let bestDistance = Infinity
+        verts.forEach((vertex, index) => {
+          const distance = vertex.distanceToSquared(target)
+          if (distance < bestDistance) {
+            best = index
+            bestDistance = distance
+          }
+        })
+        return best
+      }
     }
     picked.push(chosen)
   }
@@ -244,11 +258,11 @@ function ClusterMarker({
           })
         }}
       >
-        <sphereGeometry args={[0.055, 16, 16]} />
+        <sphereGeometry args={[cluster.pointSize || 0.018, 8, 8]} />
         <meshBasicMaterial color={cluster.color} toneMapped={false} depthTest={false} />
       </mesh>
-      <mesh scale={2}>
-        <sphereGeometry args={[0.055, 16, 16]} />
+      <mesh scale={cluster.pointSize ? 3 : 2}>
+        <sphereGeometry args={[cluster.pointSize || 0.018, 8, 8]} />
         <meshBasicMaterial
           color={cluster.color}
           transparent
@@ -257,7 +271,7 @@ function ClusterMarker({
           depthTest={false}
         />
       </mesh>
-      {facing ? (
+      {facing && cluster.showLabel ? (
         <Html
           center
           transform={false}
@@ -274,9 +288,20 @@ function ClusterMarker({
               MozOsxFontSmoothing: 'grayscale',
             }}
           >
-            <p className="text-[9px] font-medium uppercase leading-none tracking-[0.06em] text-[#0B0B0B]/75">
+            <p className="text-[9px] font-medium uppercase leading-none tracking-[0.06em] text-slate-200">
               {cluster.name}
             </p>
+            <p className="mt-1 text-[13px] leading-none" aria-hidden="true">
+              {cluster.icon}
+            </p>
+            <p className="mt-1 max-w-[10rem] text-[8px] leading-tight tracking-[0.02em] text-slate-400">
+              {cluster.description}
+            </p>
+            {cluster.count != null ? (
+              <p className="mt-1 font-mono text-[8px] uppercase tracking-[0.08em] text-slate-500">
+                {cluster.count} of top 500
+              </p>
+            ) : null}
           </div>
         </Html>
       ) : null}
@@ -325,7 +350,12 @@ function GlobeMesh({ reducedMotion, clusters, interactive, onSelect }) {
   // Vertex indices into meshVerts — always exact wireframe intersections
   const [placements, setPlacements] = useState(() => {
     const indices = pickInitialVertexIndices(meshVerts, clusters.length)
-    return Object.fromEntries(clusters.map((c, i) => [c.id, indices[i] ?? 0]))
+    return Object.fromEntries(
+      clusters.map((c, i) => [
+        c.id,
+        c.basePosition ? nearestMeshVertexIndex(meshVerts, c.basePosition) : (indices[i] ?? 0),
+      ]),
+    )
   })
   const placementsRef = useRef(placements)
   placementsRef.current = placements
@@ -528,7 +558,7 @@ export default function HeroGlobe({
         gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
         frameloop={visible ? 'always' : 'never'}
         style={{ width: '100%', height: '100%' }}
-        onCreated={({ gl }) => gl.setClearColor(0xf9f9f9, 1)}
+        onCreated={({ gl }) => gl.setClearColor(0x070b14, 1)}
       >
         {visible ? (
           <GlobeMesh

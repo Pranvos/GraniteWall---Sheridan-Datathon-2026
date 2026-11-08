@@ -9,6 +9,9 @@ export default {
         cobalt: '#0033FF',
         crimson: '#FF334B',
         amber: '#F59E0B',
+        night: '#070b14',
+        panel: '#0d1524',
+        line: '#1e293b',
       },
       fontFamily: {
         sans: [

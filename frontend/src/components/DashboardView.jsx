@@ -29,7 +29,7 @@ function severityClass(severity) {
   return 'text-[#737373]'
 }
 
-export default function DashboardView({ cluster, brick, onBack, embedded = false }) {
+export default function DashboardView({ cluster, brick, onBack, embedded = false, evaluation }) {
   // Support legacy `brick` shape during transition
   const source = cluster || brick
   const dash = source?.dashboard
@@ -84,6 +84,63 @@ export default function DashboardView({ cluster, brick, onBack, embedded = false
       </header>
 
       <main className="relative z-10 mx-auto max-w-6xl space-y-5 px-4 py-6 pb-16 sm:space-y-6 sm:px-6 sm:py-8">
+        <section className="border border-[#0B0B0B]/10 bg-[#F9F9F9] p-5">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <h2 className="text-lg font-black uppercase tracking-[-0.03em]">
+                Historical evaluation
+              </h2>
+              <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.18em] text-[#0B0B0B]/45">
+                FastAPI evaluation feed
+              </p>
+            </div>
+            <span
+              className={`font-mono text-[10px] uppercase tracking-[0.18em] ${
+                evaluation?.status === 'ready'
+                  ? 'text-emerald-600'
+                  : evaluation?.status === 'error'
+                    ? 'text-[#FF334B]'
+                    : 'text-[#F59E0B]'
+              }`}
+            >
+              {evaluation?.status === 'ready'
+                ? 'Connected'
+                : evaluation?.status === 'error'
+                  ? 'Unavailable'
+                  : 'Loading'}
+            </span>
+          </div>
+          {evaluation?.status === 'ready' ? (
+            <div className="mt-4 grid gap-3 sm:grid-cols-3">
+              <div>
+                <div className="text-2xl font-black">{evaluation.summary.length}</div>
+                <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#0B0B0B]/45">
+                  Ranking methods
+                </div>
+              </div>
+              <div>
+                <div className="text-2xl font-black">{evaluation.resultCount.toLocaleString()}</div>
+                <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#0B0B0B]/45">
+                  Monthly results
+                </div>
+              </div>
+              <div>
+                <div className="text-2xl font-black">
+                  {evaluation.summary[0]?.method || 'N/A'}
+                </div>
+                <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#0B0B0B]/45">
+                  Top listed method
+                </div>
+              </div>
+            </div>
+          ) : null}
+          {evaluation?.status === 'error' ? (
+            <p className="mt-4 text-sm text-[#FF334B]">
+              {evaluation.error}. Start the backend at http://127.0.0.1:8000 and refresh.
+            </p>
+          ) : null}
+        </section>
+
         <section className="grid gap-px bg-[#0B0B0B]/10 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard
             delay={0.05}

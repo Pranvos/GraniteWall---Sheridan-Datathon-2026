@@ -1,13 +1,13 @@
-"""Shared dataset path resolution (new helper — does not alter existing scripts)."""
+"""Shared dataset path resolution."""
 
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
-# Prefer local IBM dump; fall back to the README layout (data/data).
+# Prefer a local IBM dump; otherwise use the repository data directory.
 _CANDIDATES = (
     REPO_ROOT / "IBM" / "data",
-    REPO_ROOT / "data" / "data",
+    REPO_ROOT / "data",
 )
 
 
